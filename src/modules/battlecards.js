@@ -19,13 +19,49 @@ const Battlecards = {
                     <div class="form-group" style="margin-bottom:var(--space-4)">
                         <label class="form-label">Competitor</label>
                         <select id="battle-competitor" class="form-select">
-                            <option value="zendesk">Zendesk</option>
-                            <option value="servicenow">ServiceNow</option>
-                            <option value="salesforce">Salesforce Service Cloud</option>
-                            <option value="intercom">Intercom</option>
-                            <option value="hubspot">HubSpot Service Hub</option>
-                            <option value="zoho">Zoho Desk</option>
-                            <option value="jira">Jira Service Management</option>
+                            <optgroup label="— CX (Customer Experience) —">
+                                <option value="zendesk">Zendesk</option>
+                                <option value="salesforce-service">Salesforce Service Cloud</option>
+                                <option value="servicenow-csm">ServiceNow CSM</option>
+                                <option value="intercom">Intercom</option>
+                                <option value="hubspot-service">HubSpot Service Hub</option>
+                                <option value="zoho-desk">Zoho Desk</option>
+                                <option value="kayako">Kayako</option>
+                                <option value="helpscout">Help Scout</option>
+                                <option value="gladly">Gladly</option>
+                                <option value="kustomer">Kustomer</option>
+                                <option value="dixa">Dixa</option>
+                                <option value="front">Front</option>
+                                <option value="gorgias">Gorgias</option>
+                                <option value="liveagent">LiveAgent</option>
+                                <option value="tidio">Tidio</option>
+                                <option value="sprinklr">Sprinklr</option>
+                                <option value="genesys">Genesys Cloud CX</option>
+                                <option value="nice">NICE CXone</option>
+                                <option value="talkdesk">Talkdesk</option>
+                                <option value="five9">Five9</option>
+                            </optgroup>
+                            <optgroup label="— EX / ITSM (Employee Experience) —">
+                                <option value="servicenow-itsm">ServiceNow ITSM</option>
+                                <option value="jira-sm">Jira Service Management</option>
+                                <option value="bmc-helix">BMC Helix</option>
+                                <option value="ivanti">Ivanti</option>
+                                <option value="manageengine">ManageEngine ServiceDesk Plus</option>
+                                <option value="sysaid">SysAid</option>
+                                <option value="solarwinds">SolarWinds Service Desk</option>
+                                <option value="topdesk">TOPdesk</option>
+                                <option value="halo-itsm">Halo ITSM</option>
+                                <option value="cherwell">Cherwell (Ivanti)</option>
+                            </optgroup>
+                            <optgroup label="— CRM —">
+                                <option value="salesforce-sales">Salesforce Sales Cloud</option>
+                                <option value="hubspot-crm">HubSpot CRM</option>
+                                <option value="zoho-crm">Zoho CRM</option>
+                                <option value="pipedrive">Pipedrive</option>
+                                <option value="dynamics365">Microsoft Dynamics 365</option>
+                                <option value="sugarcrm">SugarCRM</option>
+                                <option value="monday-crm">Monday Sales CRM</option>
+                            </optgroup>
                             <option value="other">Other (specify below)</option>
                         </select>
                     </div>
@@ -38,8 +74,13 @@ const Battlecards = {
                         <select id="battle-product" class="form-select">
                             <option value="freshdesk">Freshdesk</option>
                             <option value="freshservice">Freshservice</option>
-                            <option value="freshsales">Freshsales</option>
+                            <option value="freshsales">Freshsales Suite</option>
                             <option value="freshchat">Freshchat</option>
+                            <option value="freshmarketer">Freshmarketer</option>
+                            <option value="freshcaller">Freshcaller (Contact Center)</option>
+                            <option value="freshworks-css">Freshworks FreshDesk Omni</option>
+                            <option value="freshworks-crm">Freshworks CRM</option>
+                            <option value="freshteam">Freshteam</option>
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom:var(--space-4)">
@@ -100,16 +141,32 @@ e.g., Customer is evaluating Zendesk vs Freshdesk, 150 agents, main concern is p
 
         const prompt = `Generate a competitive battlecard: Freshworks ${product} vs ${competitorName}.
 
-Include:
-1. PRICING ADVANTAGE — tier-by-tier comparison table with savings %
-2. G2 SENTIMENT ANALYSIS — rating comparison table (Overall, Ease of Use, Support, Setup Time)
-3. TECHNICAL WEAKNESSES of ${competitorName} — 5 specific weaknesses with detail
-4. TRAP-SETTING QUESTIONS — 5 questions designed to surface ${competitorName}'s weaknesses naturally in conversation, with the intended expose for each
+**Required output structure with Markdown tables:**
+
+## 1. Pricing Comparison
+| Tier / Plan | Freshworks (${product}) | ${competitorName} | Savings % |
+| --- | --- | --- | --- |
+(Compare tier-by-tier with actual pricing from official sources)
+
+## 2. G2 Sentiment Analysis
+| Category | Freshworks | ${competitorName} | Advantage |
+| --- | --- | --- | --- |
+| Overall Rating | ... | ... | ... |
+| Ease of Use | ... | ... | ... |
+| Quality of Support | ... | ... | ... |
+| Setup Time | ... | ... | ... |
+
+## 3. Technical Weaknesses of ${competitorName}
+List 5 specific, detailed weaknesses with evidence. Format as numbered list with **bold titles**.
+
+## 4. Trap-Setting Discovery Questions
+| Question | Intent | Expected Weakness Exposed |
+| --- | --- | --- |
+(5 questions designed to surface ${competitorName}'s weaknesses naturally in conversation)
 
 ${context ? `Deal context: ${context}` : ''}
 
-Use any attached documents to refine the competitive analysis.
-Use Google Search grounding for current pricing and G2 data.`;
+Cross-check all pricing and G2 data with official sources. Cite sources where possible.`;
 
         const result = await GeminiService.generateContent(prompt, 'You are a competitive intelligence expert for Freshworks pre-sales.', attachments);
 
@@ -117,7 +174,7 @@ Use Google Search grounding for current pricing and G2 data.`;
 
         if (result.success) {
             resultEl.innerHTML = `
-                <div class="result-body">${result.text}</div>
+                <div class="result-body">${window.MarkdownRenderer.parse(result.text)}</div>
                 <div class="result-meta">${badge}</div>
             `;
         } else {
@@ -131,8 +188,7 @@ Use Google Search grounding for current pricing and G2 data.`;
     },
 
     copy() {
-        const el = document.getElementById('battle-result');
-        navigator.clipboard.writeText(el.innerText).then(() => window.App.showToast('Copied!', 'success'));
+        window.App.copyToClipboard('battle-result');
     },
 
     slack() {

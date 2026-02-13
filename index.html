@@ -12,6 +12,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="src/styles/app.css">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="src/styles/sidebar.css">
     <link rel="stylesheet" href="src/styles/modules.css">
     <link rel="stylesheet" href="src/styles/components.css">
@@ -127,13 +128,14 @@
     </div>
 
     <!-- Scripts -->
+    <script>window.ENV = window.ENV || {};</script>
+    <script src="src/env.js" onerror="console.log('src/env.js not found, skipping local secrets')"></script>
     <script src="src/config.js"></script>
     <script type="module" src="src/utils/markdownRenderer.js"></script>
     <script type="module" src="src/services/geminiService.js"></script>
     <script type="module" src="src/services/freshworksService.js"></script>
     <script type="module" src="src/services/authService.js"></script>
     <script type="module" src="src/services/slackService.js"></script>
-    <script type="module" src="src/data/demoResponses.js"></script>
     <script type="module" src="src/modules/demoStrategy.js"></script>
     <script type="module" src="src/modules/riskReport.js"></script>
     <script type="module" src="src/modules/valueArchitecture.js"></script>

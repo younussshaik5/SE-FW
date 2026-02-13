@@ -215,8 +215,7 @@ Return ONLY the JSON array, no other text.`;
 
     copyJSON() {
         if (!this.generatedData) return;
-        navigator.clipboard.writeText(JSON.stringify(this.generatedData, null, 2))
-            .then(() => window.App.showToast('JSON copied!', 'success'));
+        window.App.copyToClipboard('seed-preview');
     },
 
     downloadJSON() {

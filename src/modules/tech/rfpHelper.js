@@ -142,21 +142,21 @@ const RfpHelper = {
 
             try {
                 const result = await GeminiService.generateContent(
-                    `Answer this RFP question for Freshworks: "${q}". 
-                     Ground your answer in official Freshworks documentation. 
-                     Be concise and professional.`,
-                    'You are an RFP writer.',
+                    `Answer this RFP question for Freshworks: "${q}".
+
+Ground your answer in official Freshworks documentation and help articles.
+Be concise, professional, and specific. If the answer references a specific product feature, mention the plan tier (Growth/Pro/Enterprise) where applicable.
+Cite official sources where possible (e.g., [Source: Freshdesk Docs]).`,
+                    'You are an expert RFP response writer for Freshworks. Provide accurate, grounded answers.',
                     [],
                     tools
                 );
 
                 let answer = "";
-                if (result.success && !result.demo) {
+                if (result.success) {
                     answer = result.text;
-                } else if (result.demo) {
-                    answer = "Demo Mode: Freshworks supports this feature. Please enable live AI for real answers.";
                 } else {
-                    answer = "Error generating answer.";
+                    answer = `Error: ${result.error || 'Failed to generate answer'}`;
                 }
 
                 document.getElementById(`rfp-ans-${i}`).value = answer;

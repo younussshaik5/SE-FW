@@ -95,18 +95,37 @@ Deal: ${deal} | Value: ${value}
 Discovery Notes:
 ${notes}
 
-Analyze any attached account plans or org charts to populate the dimensions.
+Analyze any attached account plans or org charts.
 
-For each MEDDPICC dimension (Metrics, Economic Buyer, Decision Criteria, Decision Process, Identify Pain, Paper Process, Implicate Pain, Champion), provide:
-1. Score out of 10 with emoji (🟢 7-10, 🟡 4-6, 🔴 1-3)
-2. Assessment paragraph
-3. Specific ACTION item if score < 7
+**Required output structure:**
 
-End with:
-- Overall deal health score out of 100
-- Top 3 priority actions with urgency indicators (🔴/🟡)
+## MEDDPICC Scorecard
+| Dimension | Score /10 | Indicator | Key Finding |
+| --- | --- | --- | --- |
+| **M**etrics | X/10 | 🟢/🟡/🔴 | ... |
+| **E**conomic Buyer | X/10 | 🟢/🟡/🔴 | ... |
+| **D**ecision Criteria | X/10 | 🟢/🟡/🔴 | ... |
+| **D**ecision Process | X/10 | 🟢/🟡/🔴 | ... |
+| **I**dentify Pain | X/10 | 🟢/🟡/🔴 | ... |
+| **P**aper Process | X/10 | 🟢/🟡/🔴 | ... |
+| **I**mplicate Pain | X/10 | 🟢/🟡/🔴 | ... |
+| **C**hampion | X/10 | 🟢/🟡/🔴 | ... |
+(Use 🟢 7-10, 🟡 4-6, 🔴 1-3)
 
-Format as a table + detailed breakdown.`;
+## Detailed Assessment
+For each dimension scoring below 7, provide:
+- **Assessment:** What we know
+- **Gap:** What's missing
+- **Action:** Specific next step to improve the score
+
+## Deal Health Summary
+- **Overall Score:** X/100
+- **Risk Level:** [🔴 HIGH / 🟡 MEDIUM / 🟢 LOW]
+
+## Top 3 Priority Actions
+| Priority | Action | Urgency | Owner |
+| --- | --- | --- | --- |
+| 1 | ... | 🔴/🟡 | SE/AE |`;
 
         const result = await GeminiService.generateContent(prompt, 'You are a MEDDPICC methodology expert evaluating enterprise technology deals.', attachments);
 
@@ -114,7 +133,7 @@ Format as a table + detailed breakdown.`;
 
         if (result.success) {
             resultEl.innerHTML = `
-                <div class="result-body">${result.text}</div>
+                <div class="result-body">${window.MarkdownRenderer.parse(result.text)}</div>
                 <div class="result-meta">${badge}</div>
             `;
         } else {
@@ -128,8 +147,7 @@ Format as a table + detailed breakdown.`;
     },
 
     copy() {
-        const el = document.getElementById('meddpicc-result');
-        navigator.clipboard.writeText(el.innerText).then(() => window.App.showToast('Copied!', 'success'));
+        window.App.copyToClipboard('meddpicc-result');
     },
 
     slack() {

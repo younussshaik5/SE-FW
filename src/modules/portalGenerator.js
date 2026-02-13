@@ -146,6 +146,9 @@ const PortalGenerator = {
 
     copyCode() {
         if (this.portalHTML) {
+            // Preview is in an iframe, but HTML is in this.portalHTML
+            // For now, let's keep it simple or update App.copyToClipboard to take raw text too?
+            // Actually, copying code should be text-only anyway.
             navigator.clipboard.writeText(this.portalHTML).then(() => window.App.showToast('HTML copied!', 'success'));
         }
     },

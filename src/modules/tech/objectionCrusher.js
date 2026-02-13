@@ -81,8 +81,7 @@ const ObjectionCrusher = {
     },
 
     copy() {
-        const el = document.getElementById('objection-result');
-        navigator.clipboard.writeText(el.innerText).then(() => window.App.showToast('Copied!', 'success'));
+        window.App.copyToClipboard('objection-result');
     }
 };
 

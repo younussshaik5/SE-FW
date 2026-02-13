@@ -122,14 +122,20 @@ Context: ${data.context}
 Analyze any attached contracts or usage reports for more accurate cost modeling.
 
 Include:
-1. Current State cost table
-2. Proposed Freshworks cost table (3-year)
-3. Headcount avoidance model
+1. Current State cost table (Markdown table format)
+2. Proposed Freshworks cost table — 3-year (Markdown table format)
+3. Headcount avoidance model (Markdown table format)
 4. Direct labor savings calculation
-5. 3-Year value summary with total savings, Year 1 ROI%, tool consolidation
-6. CFO recommendation paragraph
+5. 3-Year value summary table:
+| Metric | Year 1 | Year 2 | Year 3 | Total |
+| --- | --- | --- | --- | --- |
+| Direct Savings | ... | ... | ... | ... |
+| Labor Savings | ... | ... | ... | ... |
+| Total Value | ... | ... | ... | ... |
+6. Year 1 ROI % and Payback Period
+7. CFO recommendation paragraph
 
-Use real math based on inputs. Format with tables.`;
+Present ALL financial data in Markdown tables. Use real math based on inputs. Cite Freshworks pricing from official sources.`;
 
         const result = await GeminiService.generateContent(prompt, 'You are a value engineering expert creating CFO-level business cases.', attachments);
 
@@ -137,7 +143,7 @@ Use real math based on inputs. Format with tables.`;
 
         if (result.success) {
             resultEl.innerHTML = `
-                <div class="result-body">${result.text}</div>
+                <div class="result-body">${window.MarkdownRenderer.parse(result.text)}</div>
                 <div class="result-meta">${badge}</div>
             `;
         } else {
@@ -151,17 +157,22 @@ Use real math based on inputs. Format with tables.`;
     },
 
     copyResult() {
-        const el = document.getElementById('roi-result');
-        navigator.clipboard.writeText(el.innerText).then(() => window.App.showToast('Copied!', 'success'));
+        window.App.copyToClipboard('roi-result');
     },
 
     exportResult() {
         const el = document.getElementById('roi-result');
-        const blob = new Blob([el.innerText], { type: 'text/plain' });
+        const htmlContent = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>ROI Report - ${new Date().toLocaleDateString()}</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:900px;margin:2rem auto;padding:1rem;color:#1a1a2e}
+table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid #ddd;padding:0.75rem;text-align:left}
+th{background:#f0f0f5;font-weight:600}h1,h2,h3{color:#1a1a2e}strong{color:#333}</style></head>
+<body>${el.innerHTML}</body></html>`;
+        const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `roi-report-${new Date().toISOString().split('T')[0]}.txt`;
+        a.download = `roi-report-${new Date().toISOString().split('T')[0]}.html`;
         a.click();
         URL.revokeObjectURL(url);
     }

@@ -113,8 +113,7 @@ Requirements:
     },
 
     copy() {
-        const el = document.getElementById('email-result');
-        navigator.clipboard.writeText(el.innerText).then(() => window.App.showToast('Copied!', 'success'));
+        window.App.copyToClipboard('email-result');
     }
 };
 

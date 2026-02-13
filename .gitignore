@@ -1,0 +1,19 @@
+# Secrets
+src/env.js
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE junk
+.vscode/
+.idea/
+*.swp
+
+# Node / Dependencies (if any)
+node_modules/
+.npm/
+
+# Logs
+logs/
+*.log

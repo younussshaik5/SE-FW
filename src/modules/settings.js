@@ -25,24 +25,18 @@ const Settings = {
                 <!-- AI Mode -->
                 <div class="glass-card module-panel">
                     <h2>🤖 AI Configuration</h2>
-                    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);padding:var(--space-3);background:${aiMode === 'live' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)'};border-radius:var(--radius-md);">
-                        <span style="font-size:1.5rem">${aiMode === 'live' ? '🟢' : '🟡'}</span>
+                    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);padding:var(--space-3);background:${aiMode === 'live' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'};border-radius:var(--radius-md);">
+                        <span style="font-size:1.5rem">${aiMode === 'live' ? '🟢' : '🔴'}</span>
                         <div>
-                            <div style="font-weight:600;color:var(--text-primary);">${aiMode === 'live' ? 'Live Mode' : 'Demo Mode'}</div>
+                            <div style="font-weight:600;color:var(--text-primary);">${aiMode === 'live' ? 'AI Ready' : 'AI Unconfigured'}</div>
                             <div style="font-size:var(--font-sm);color:var(--text-secondary);">
-                                ${aiMode === 'live' ? 'Connected to Google Gemini' : 'Using realistic mock responses'}
+                                ${aiMode === 'live' ? 'Connected to OpenRouter' : 'Add an API key to enable live AI'}
                             </div>
                         </div>
                     </div>
 
-
                     <div class="form-group" style="margin-bottom:var(--space-4)">
-                        <label class="form-label">Gemini API Key</label>
-                        <input id="setting-gemini-key" class="form-input" type="password" placeholder="Gemini API key" value="${GeminiService.apiKey || ''}" />
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:var(--space-4); border-top: 1px solid var(--border-subtle); padding-top: var(--space-4);">
-                        <label class="form-label">OpenRouter API Key (Free Fallback)</label>
+                        <label class="form-label">OpenRouter API Key</label>
                         <input id="setting-openrouter-key" class="form-input" type="password" placeholder="OpenRouter API key" value="${GeminiService.openRouterKey || ''}" />
                     </div>
 
@@ -123,11 +117,9 @@ const Settings = {
     init() { },
 
     saveAI() {
-        const geminiKey = document.getElementById('setting-gemini-key').value;
         const orKey = document.getElementById('setting-openrouter-key').value;
         const orModel = document.getElementById('setting-openrouter-model').value;
 
-        if (geminiKey) GeminiService.setApiKey?.(geminiKey);
         if (orKey) GeminiService.setOpenRouterKey?.(orKey);
         if (orModel) GeminiService.setOpenRouterModel?.(orModel);
 
@@ -136,12 +128,10 @@ const Settings = {
     },
 
     async testAI() {
-        window.App.showToast('Testing Gemini connection...', 'info');
+        window.App.showToast('Testing OpenRouter connection...', 'info');
         const result = await GeminiService.generateContent('Say "Hello, connection test successful!" in one line.', 'Be concise.');
-        if (result.success && !result.demo) {
-            window.App.showToast('✅ Gemini connected! Live mode active.', 'success');
-        } else if (result.demo) {
-            window.App.showToast('🟡 Demo mode active — configure API key or OAuth for live mode', 'warning');
+        if (result.success) {
+            window.App.showToast('✅ OpenRouter connected! Live mode active.', 'success');
         } else {
             window.App.showToast('❌ Connection failed: ' + (result.error || 'Unknown error'), 'danger');
         }

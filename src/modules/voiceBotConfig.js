@@ -93,7 +93,7 @@ const VoiceBotConfig = {
 
         resultEl.innerHTML = '<div class="loading-shimmer" style="height:400px"></div>';
 
-        const prompt = `Generate a complete Freshcaller IVR / Voice Bot configuration for:
+        const prompt = `Generate a complete Freshcaller (Freshdesk Contact Center) IVR / Voice Bot configuration for:
 
 Company: ${company || 'Sample Company'}
 Industry: ${industry}
@@ -102,20 +102,46 @@ Languages: ${langs.join(', ')}
 Business Hours: ${hours || 'Mon-Fri 9am-5pm'}
 Special Requirements: ${special || 'Standard setup'}
 
-Include:
-1. Complete IVR flow diagram (using text tree format)
-2. Bot configuration table (language, voice, timeout, retries, hours, after-hours)
-3. Queue routing rules
-4. AI bot conversation flows for self-service scenarios
-5. Escalation paths`;
+**Required output structure with Markdown tables:**
 
-        const result = await GeminiService.generateContent(prompt, 'You are a Freshcaller IVR architect.');
+## IVR Flow
+| Step | Menu Option | Action | Routing Target |
+| --- | --- | --- | --- |
+| 1 | Welcome | Greeting prompt | Auto-detect language |
+| 2 | Press 1 | ... | ... |
+(Design complete IVR tree)
+
+## Bot Configuration
+| Setting | Value |
+| --- | --- |
+| Language(s) | ... |
+| Voice | ... |
+| Timeout (sec) | ... |
+| Max Retries | ... |
+| Business Hours | ... |
+| After-Hours Action | ... |
+
+## Queue Routing Rules
+| Category | Team | Priority | SLA |
+| --- | --- | --- | --- |
+(Map each category to a team)
+
+## AI Self-Service Flows
+Conversation flows for common scenarios. Show sample dialogues.
+
+## Escalation Paths
+| Trigger | Action | Notes |
+| --- | --- | --- |
+
+Reference official Freshcaller documentation. [Source: Freshcaller Admin Guide]`;
+
+        const result = await GeminiService.generateContent(prompt, 'You are a Freshworks Freshcaller/Contact Center IVR architect. Use Markdown tables for all structured data.');
 
         const badge = window.App.getAiBadge(result);
 
         if (result.success) {
             resultEl.innerHTML = `
-                <div class="result-body">${result.text}</div>
+                <div class="result-body">${window.MarkdownRenderer.parse(result.text)}</div>
                 <div class="result-meta">${badge}</div>
             `;
         } else {
@@ -129,8 +155,7 @@ Include:
     },
 
     copy() {
-        const el = document.getElementById('voice-result');
-        navigator.clipboard.writeText(el.innerText).then(() => window.App.showToast('Copied!', 'success'));
+        window.App.copyToClipboard('voice-result');
     },
 
     download() {

@@ -1,316 +1,434 @@
 // ========================================
-// FDK App Builder (Intelligent Version)
+// FDK App Builder (v3.0 — Chat-Based + Intelligent)
 // ========================================
-
 import GeminiService from '../services/geminiService.js';
 import FdkKnowledge from '../data/fdkKnowledge.js';
 
 const FdkBuilder = {
+    // ---- State ----
     state: {
-        step: 0, // 0: Input, 1: Analysis, 2: Generation, 3: Done
-        analysis: null,
-        logs: [],
-        generatedFiles: {}
+        phase: 'discovery', // discovery | blueprint | coding | done
+        messages: [],
+        appContext: {
+            name: '',
+            desc: '',
+            products: [],
+            features: [],
+            integrations: []
+        },
+        generatedFiles: {},
+        activeFile: 'manifest'
     },
 
+    attachments: [],
+
+    // ---- Render ----
     render() {
         return `
         <div class="module-page">
             <div class="module-header">
-                <h1>🔧 Intelligent FDK Builder</h1>
-                <p class="module-desc">Architect and build complex Freshworks apps with logic-driven AI.</p>
+                <h1>🔧 FDK Architect AI</h1>
+                <p class="module-desc">Conversational engineer for Freshworks apps. Probes requirements, designs architecture, and builds valid FDK v3.0 code.</p>
             </div>
 
-            <!-- Progress Tracker -->
+            <!-- Progress -->
             <div class="progress-steps" style="margin-bottom:var(--space-6)">
-                <div class="progress-step ${this.state.step >= 0 ? 'active' : ''} ${this.state.step > 0 ? 'completed' : ''}">
+                <div class="progress-step ${this.state.phase === 'discovery' ? 'active' : (this.state.phase !== 'discovery' ? 'completed' : '')}">
                     <div class="step-dot">1</div>
-                    <div class="step-label">Requirements</div>
+                    <div class="step-label">Discovery</div>
                 </div>
-                <div class="step-connector ${this.state.step > 0 ? 'completed' : ''}"></div>
-                <div class="progress-step ${this.state.step >= 1 ? 'active' : ''} ${this.state.step > 1 ? 'completed' : ''}">
+                <div class="step-connector ${this.state.phase !== 'discovery' ? 'completed' : ''}"></div>
+                <div class="progress-step ${this.state.phase === 'blueprint' ? 'active' : (['coding', 'done'].includes(this.state.phase) ? 'completed' : '')}">
                     <div class="step-dot">2</div>
-                    <div class="step-label">Analysis</div>
+                    <div class="step-label">Blueprint</div>
                 </div>
-                <div class="step-connector ${this.state.step > 1 ? 'completed' : ''}"></div>
-                <div class="progress-step ${this.state.step >= 2 ? 'active' : ''} ${this.state.step > 2 ? 'completed' : ''}">
+                <div class="step-connector ${['coding', 'done'].includes(this.state.phase) ? 'completed' : ''}"></div>
+                <div class="progress-step ${this.state.phase === 'coding' ? 'active' : (this.state.phase === 'done' ? 'completed' : '')}">
                     <div class="step-dot">3</div>
-                    <div class="step-label">Generation</div>
-                </div>
-                <div class="step-connector ${this.state.step > 2 ? 'completed' : ''}"></div>
-                <div class="progress-step ${this.state.step >= 3 ? 'active' : ''}">
-                    <div class="step-dot">4</div>
-                    <div class="step-label">Result</div>
+                    <div class="step-label">Code Construction</div>
                 </div>
             </div>
 
-            <!-- Step 1: Input -->
-            <div id="step-input" class="glass-card module-panel" style="display:${this.state.step === 0 ? 'block' : 'none'}">
-                <h2>📝 App Requirements</h2>
-                <div class="form-group" style="margin-bottom:var(--space-4)">
-                    <label class="form-label">Describe your app functionality in detail</label>
-                    <textarea id="fdk-desc" class="form-textarea" rows="6" placeholder="e.g., I need a serverless app for Freshdesk that listens for 'High Priority' ticket creation events. When triggered, it should query an external CRM API (https://api.crm.com) to get customer details and add a private note to the ticket with those details."></textarea>
+            ${this.renderPhaseContent()}
+        </div>`;
+    },
+
+    renderPhaseContent() {
+        switch (this.state.phase) {
+            case 'discovery':
+            case 'blueprint':
+                return this.renderChatInterface();
+            case 'coding':
+            case 'done':
+                return this.renderEditorInterface();
+            default:
+                return this.renderChatInterface();
+        }
+    },
+
+    // ---- Phase 1 & 2: Chat Interface ----
+    renderChatInterface() {
+        return `
+        <div class="glass-card" style="border-radius:var(--radius-lg);overflow:hidden;height:600px;display:flex;flex-direction:column;">
+            <div class="chat-messages" id="fdk-messages" style="flex:1;overflow-y:auto;padding:var(--space-4);">
+                <!-- Messages -->
+            </div>
+            
+            <div class="chat-input-area" style="border-top:1px solid var(--border-subtle);padding:var(--space-3);background:var(--surface-2);">
+                <div style="display:flex;gap:var(--space-2);">
+                    <button class="chat-send" onclick="document.getElementById('fdk-file').click()" style="background:var(--surface-3);color:var(--text-primary)">📎</button>
+                    <input type="text" class="chat-input" id="fdk-input" placeholder="Describe your app or integration needs..." 
+                           onkeydown="if(event.key==='Enter')FdkBuilder.send()" style="flex:1;" />
+                    <button class="chat-send" onclick="FdkBuilder.send()">➤</button>
                 </div>
-                <div class="form-group" style="margin-bottom:var(--space-4)">
-                    <label class="form-label">Attachments (PRD / Specs)</label>
-                    <input type="file" id="fdk-file" class="form-input" multiple />
+                <input type="file" id="fdk-file" style="display:none" onchange="FdkBuilder.handleFileSelect()" multiple />
+                <div id="fdk-file-preview" style="margin-top:0.5rem;color:var(--text-secondary);font-size:0.8rem;display:none;"></div>
+            </div>
+        </div>
+
+        ${this.state.phase === 'discovery' ? `
+            <div style="margin-top:var(--space-4);text-align:center;">
+                <button class="btn btn-primary btn-lg" id="btn-generate-blueprint" onclick="FdkBuilder.generateBlueprint()" style="display:none;">
+                    📐 Generate Architecture Blueprint
+                </button>
+            </div>
+        ` : ''}
+
+        ${this.state.phase === 'blueprint' ? `
+            <div style="margin-top:var(--space-4);text-align:center;display:flex;gap:var(--space-3);justify-content:center;">
+                <button class="btn btn-secondary" onclick="FdkBuilder.backToDiscovery()">← Modify Requirements</button>
+                <button class="btn btn-primary btn-lg" onclick="FdkBuilder.startCoding()">
+                    🚀 Build FDK App (Generate Code)
+                </button>
+            </div>
+        ` : ''}`;
+    },
+
+    // ---- Phase 3: Code Editor Interface ----
+    renderEditorInterface() {
+        const files = ['manifest', 'server', 'iparams', 'index', 'app'];
+        const fileLabels = {
+            manifest: 'manifest.json',
+            server: 'server/server.js',
+            iparams: 'config/iparams.json',
+            index: 'app/index.html',
+            app: 'app/scripts/app.js'
+        };
+
+        return `
+        <div style="display:flex;gap:var(--space-4);height:700px;">
+            <!-- File Sidebar -->
+            <div class="glass-card" style="width:250px;display:flex;flex-direction:column;padding:var(--space-2);">
+                <h3 style="padding:var(--space-3);margin:0;font-size:var(--font-sm);color:var(--text-secondary);text-transform:uppercase;">📦 App Structure</h3>
+                <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">
+                    ${files.map(f => `
+                        <button class="file-tab ${this.state.activeFile === f ? 'active' : ''}" 
+                                onclick="FdkBuilder.switchFile('${f}')"
+                                style="text-align:left;padding:8px 12px;background:${this.state.activeFile === f ? 'var(--primary-color)' : 'transparent'};color:${this.state.activeFile === f ? 'white' : 'var(--text-primary)'};border:none;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;gap:8px;">
+                            <span style="opacity:0.7;">${f === 'index' || f === 'app' ? '📄' : '{ }'}</span>
+                            ${fileLabels[f]}
+                        </button>
+                    `).join('')}
                 </div>
-                <button class="btn btn-primary" onclick="FdkBuilder.startAnalysis()">🔍 Analyze Requirements</button>
+                <div style="padding:var(--space-3);border-top:1px solid var(--border-subtle);">
+                    <button class="btn btn-primary" style="width:100%;" onclick="FdkBuilder.downloadZip()">
+                        💾 Download app.zip
+                    </button>
+                    <button class="btn btn-secondary" style="width:100%;margin-top:var(--space-2);" onclick="FdkBuilder.resetAll()">
+                        🔄 Start New App
+                    </button>
+                </div>
             </div>
 
-            <!-- Step 2: Analysis Result -->
-            <div id="step-analysis" class="module-grid" style="display:${this.state.step === 1 ? 'grid' : 'none'}">
-                <div class="glass-card module-panel">
-                    <h2>🧠 Architecture Plan</h2>
-                    <div id="analysis-content">
-                        ${this.state.analysis ? this.renderAnalysis(this.state.analysis) : '<div class="loading-shimmer" style="height:200px"></div>'}
+            <!-- Code Editor -->
+            <div class="glass-card" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                <div style="padding:var(--space-3);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-family:monospace;color:var(--accent-primary);">${fileLabels[this.state.activeFile]}</span>
+                    <div style="display:flex;gap:var(--space-2);">
+                        <button class="btn btn-sm btn-secondary" onclick="FdkBuilder.saveFile()">Save</button>
+                        <button class="btn btn-sm btn-secondary" onclick="FdkBuilder.regenerateFile('${this.state.activeFile}')">✨ Regenerate</button>
                     </div>
-                    <div style="margin-top:var(--space-4);display:flex;gap:var(--space-3)">
-                        <button class="btn btn-primary" onclick="FdkBuilder.startGeneration()">⚙️ Generate Code</button>
-                        <button class="btn btn-secondary" onclick="FdkBuilder.reset()">Modify</button>
-                    </div>
                 </div>
-                 <div class="glass-card module-panel">
-                    <h2>📋 Components Identified</h2>
-                    <ul id="analysis-components" style="list-style:none;padding:0;">
-                         ${this.state.analysis ? this.renderComponentsList(this.state.analysis) : ''}
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Step 3: Generation Logs -->
-            <div id="step-generation" class="glass-card module-panel" style="display:${this.state.step === 2 ? 'block' : 'none'}">
-                <h2>⚙️ Building App...</h2>
-                <div id="build-logs" style="background:#0d1117;padding:var(--space-4);border-radius:var(--radius-md);font-family:monospace;height:300px;overflow-y:auto;color:#7ee787;">
-                    ${this.state.logs.map(l => `<div>> ${l}</div>`).join('')}
-                </div>
-            </div>
-
-            <!-- Step 4: Result -->
-            <div id="step-result" class="glass-card module-panel" style="display:${this.state.step === 3 ? 'block' : 'none'}">
-                <div class="result-header">
-                    <h2>🎉 App Generated Successfully</h2>
-                    <div class="result-actions">
-                        <button class="btn btn-sm btn-primary" onclick="FdkBuilder.downloadZip()">📥 Download Bundle (JSON)</button>
-                        <button class="btn btn-sm btn-secondary" onclick="FdkBuilder.reset()">Start Over</button>
-                    </div>
-                </div>
-                
-                <div class="tabs" style="margin-bottom:var(--space-4)">
-                    <button class="tab active" onclick="FdkBuilder.showFile('manifest')">manifest.json</button>
-                    <button class="tab" onclick="FdkBuilder.showFile('server')">server.js</button>
-                    <button class="tab" onclick="FdkBuilder.showFile('html')">index.html</button>
-                    <button class="tab" onclick="FdkBuilder.showFile('js')">app.js</button>
-                     <button class="tab" onclick="FdkBuilder.showFile('iparams')">iparams.json</button>
-                </div>
-                
-                <div id="code-viewer" class="code-output" style="min-height:400px;">
-                    ${this.state.generatedFiles.manifest ? window.MarkdownRenderer.parse('```json\n' + this.state.generatedFiles.manifest + '\n```') : ''}
-                </div>
+                <textarea id="fdk-editor" 
+                          style="flex:1;background:#0d1117;color:#c9d1d9;border:none;padding:var(--space-4);font-family:'Fira Code',monospace;font-size:13px;line-height:1.5;resize:none;" 
+                          spellcheck="false"
+                          oninput="FdkBuilder.updateFileContent(this.value)">${this.state.generatedFiles[this.state.activeFile] || '// Generating code...'}</textarea>
             </div>
         </div>`;
     },
 
-    renderAnalysis(analysis) {
-        return `
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4)">
-                <div>
-                    <strong>Product:</strong> <span class="chip">${analysis.product}</span>
-                </div>
-                <div>
-                    <strong>Complexity:</strong> <span class="chip" style="background:${analysis.complexity === 'high' ? 'var(--danger-glow)' : 'var(--bg-tertiary)'}">${analysis.complexity}</span>
+    // ---- Logic: Init ----
+    init() {
+        this.state = {
+            phase: 'discovery',
+            messages: [],
+            appContext: {},
+            generatedFiles: {},
+            activeFile: 'manifest'
+        };
+        this.addMessage('ai', `👋 Hello! I'm your **FDK Architect**. I help build serverless apps for Freshworks.
+
+I can build apps that:
+- Integrate with **third-party APIs** (Slack, Asana, CRM, etc.) — *I'll self-research the endpoints!*
+- Automate ticket workflows
+- Add custom widgets to the UI
+- Validate data and sync records
+
+**Tell me broadly what you want to build.** (e.g., "A Freshdesk app that creates an Asana task when a ticket is escalated")`);
+        this.render();
+    },
+
+    // ---- Logic: Chat ----
+    addMessage(role, text, badge = null) {
+        this.state.messages.push({ role, text, badge });
+        this.updateChatUI();
+    },
+
+    updateChatUI() {
+        const container = document.getElementById('fdk-messages');
+        if (!container) return; // Might be in editor view
+
+        container.innerHTML = this.state.messages.map(msg => `
+            <div class="chat-message ${msg.role === 'ai' ? 'ai' : 'user'}">
+                <div class="chat-avatar">${msg.role === 'ai' ? '🤖' : '👤'}</div>
+                <div class="chat-bubble">
+                    ${msg.role === 'ai' ? window.MarkdownRenderer.parse(msg.text) : msg.text}
+                    ${msg.badge ? `<div class="result-meta" style="margin-top:var(--space-2);opacity:0.7;">${msg.badge}</div>` : ''}
                 </div>
             </div>
-            <p style="color:var(--text-secondary);margin-bottom:var(--space-4)">${analysis.reasoning}</p>
-        `;
+        `).join('');
+        container.scrollTop = container.scrollHeight;
+
+        // Show blueprint button if we have enough context
+        const userCount = this.state.messages.filter(m => m.role === 'user').length;
+        const btn = document.getElementById('btn-generate-blueprint');
+        if (btn && this.state.phase === 'discovery') {
+            btn.style.display = userCount >= 2 ? 'inline-block' : 'none';
+        }
     },
 
-    renderComponentsList(analysis) {
-        let html = '';
-        if (analysis.locations?.length) {
-            html += `<li><strong>📍 Locations:</strong> ${analysis.locations.join(', ')}</li>`;
-        }
-        if (analysis.events?.length) {
-            html += `<li><strong>⚡ Events:</strong> ${analysis.events.join(', ')}</li>`;
-        }
-        if (analysis.apis?.length) {
-            html += `<li><strong>🔗 External APIs:</strong> ${analysis.apis.join(', ')}</li>`;
-        }
-        if (analysis.features?.includes('data_storage')) {
-            html += `<li><strong>💾 Data Storage:</strong> db.set / db.get</li>`;
-        }
-        return html;
-    },
+    async send() {
+        const input = document.getElementById('fdk-input');
+        const text = input.value.trim();
+        if (!text && this.attachments.length === 0) return;
 
-    init() { },
+        input.value = '';
+        this.addMessage('user', text + (this.attachments.length ? `\n[Attached: ${this.attachments.map(a => a.name).join(', ')}]` : ''));
 
-    async startAnalysis() {
-        const desc = document.getElementById('fdk-desc').value;
-        if (!desc.trim()) {
-            window.App.showToast('Please describe your app', 'warning');
-            return;
-        }
+        const currentAttachments = this.attachments.map(a => a.data);
+        this.attachments = [];
+        document.getElementById('fdk-file-preview').style.display = 'none';
 
-        this.state.step = 1;
-        this.updateUI();
+        // Loading
+        const container = document.getElementById('fdk-messages');
+        container.insertAdjacentHTML('beforeend', `<div class="chat-message ai" id="fdk-loading"><div class="chat-avatar">🤖</div><div class="chat-bubble"><span class="loading-dots">Thinking</span></div></div>`);
+        container.scrollTop = container.scrollHeight;
 
-        // Simulate Analysis or call AI
-        this.addLog('Analyzing requirements...');
+        // AI Call
+        const history = this.state.messages.map(m => `${m.role === 'ai' ? 'Assistant' : 'User'}: ${m.text}`).join('\n\n');
 
-        const prompt = FdkKnowledge.prompts.analyzeParams + desc;
-        const result = await GeminiService.generateContent(prompt, "You are a Senior FDK Architect. Output valid JSON only.", []);
+        const result = await GeminiService.generateContent(
+            `You are an expert FDK Developer & Solution Architect.
+Current Phase: **${this.state.phase.toUpperCase()}**
+
+User's Goal: Build a Freshworks App (FDK v3.0, Node.js 18).
+
+Conversation History:
+${history}
+
+**YOUR TASK:**
+1. **Probe for *Sufficient* Clarity:** Do not ask for confirmation of details you can reasonably infer. If a user asks for "Jira integration", assume standard Create/Update actions unless specified otherwise.
+2. **Move Fast:** If you have enough info to build a basic Minimum Viable Product (MVP), **STOP PROBING** and propose the Blueprint immediately.
+3. **Third-Party Integrations:**
+   - **Self-Solve:** Search your internal knowledge base for their API endpoints.
+   - **Do NOT ask users for endpoints** unless it's a private custom API.
+   - **Assume standard defaults** for unspecified minor details.
+4. **Specific Questions Only:** If you MUST ask a question, make it a blocker (e.g., "I need the API Key to proceed" or "Which specific Jira project?"). Do not ask "Is this correct?" or "Shall I proceed?". Just proceed.
+
+**Output Rule:**
+- If you have enough to start a Manifest and basic Serverless functioning -> **Propose Blueprint**.
+- If you are missing a CRITICAL piece of info (like which product to integrate with) -> Ask **ONE** specific question.`,
+            'You are a Senior FDK Engineer. You are decisive and action-oriented. You avoid loops. You self-solve integration details.',
+            currentAttachments
+        );
+
+        document.getElementById('fdk-loading')?.remove();
 
         if (result.success) {
-            try {
-                const jsonStr = result.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-                this.state.analysis = JSON.parse(jsonStr);
-                this.addLog(`AI Analysis complete via ${result.source}`);
-            } catch (e) {
-                console.error("JSON Parse Error", e);
-                this.addLog('❌ AI returned invalid JSON analysis. Please refine your description.');
-                this.state.step = 0;
-                this.updateUI();
-                return;
-            }
+            this.addMessage('ai', result.text, window.App.getAiBadge(result));
         } else {
-            this.addLog(`❌ AI Analysis Failed: ${result.error || 'Unknown error'}`);
-            this.state.step = 0;
-            this.updateUI();
+            this.addMessage('ai', `❌ Error: ${result.error}`);
+        }
+    },
+
+    // ---- Logic: Blueprint ----
+    async generateBlueprint() {
+        window.App.showToast('Architecting solution...', 'info');
+        this.state.phase = 'blueprint';
+        this.render(); // Switch view context if needed? No, staying in chat but updating buttons.
+
+        const history = this.state.messages.map(m => `${m.role === 'ai' ? 'Assistant' : 'User'}: ${m.text}`).join('\n\n');
+
+        const result = await GeminiService.generateContent(
+            `Generate a **Technical Blueprint** for this app based on the conversation.
+            
+Conversation:
+${history}
+
+**OUTPUT FORMAT:**
+Markdown with these sections:
+1. **App Summary**: 1-line description.
+2. **Components**:
+   - **Locations**: (e.g., ticket_sidebar)
+   - **Events**: (e.g., onTicketCreate)
+   - **Serverless**: Yes/No
+3. **Integration Strategy**:
+   - **External APIs**: List exact endpoints you will call (e.g., \`POST https://app.asana.com/api/1.0/tasks\`)
+   - **Auth**: How auth will be handled (iparams secure: true)
+4. **Data Flow**: Step-by-step logic.
+
+**CRITICAL:** If explicit external API docs weren't provided, use your **INTERNAL KNOWLEDGE** to propose the correct standard endpoints (Curl format).`,
+            'You are a generic FDK Solutions Architect.'
+        );
+
+        if (result.success) {
+            this.addMessage('ai', `📋 **Architecture Blueprint**\n\n${result.text}\n\nReview this plan. If it looks good, click **Build FDK App** to generate the code!`, window.App.getAiBadge(result));
+        }
+    },
+
+    // ---- Logic: Coding ----
+    async startCoding() {
+        this.state.phase = 'coding';
+        this.render();
+        window.App.showToast('Spinning up FDK code generator...', 'success');
+
+        // Parallel generation of core files
+        await this.generateAllFiles();
+    },
+
+    async generateAllFiles() {
+        const promptContext = this.state.messages.slice(-6).map(m => m.text).join('\n');
+
+        const filesToGen = ['manifest', 'server', 'iparams', 'index', 'app'];
+
+        for (const file of filesToGen) {
+            this.state.generatedFiles[file] = `// Generating ${file}...\n// Please wait.`;
+        }
+        this.render(); // Update UI
+
+        // Generate Manifest first as it dictates structure
+        await this.regenerateFile('manifest', promptContext);
+
+        // Then others in parallel-ish
+        await this.regenerateFile('iparams', promptContext);
+        await this.regenerateFile('server', promptContext);
+        await this.regenerateFile('index', promptContext);
+        await this.regenerateFile('app', promptContext);
+
+        this.state.phase = 'done';
+        window.App.showToast('App build complete!', 'success');
+    },
+
+    async regenerateFile(fileType, context = '') {
+        const filePrompts = {
+            manifest: 'Generate **manifest.json**. Standards: "platform-version":"3.0", Node "18.13.0". Whitelist domains if needed.',
+            server: 'Generate **server/server.js**. Use ES6. Exports = { events: ... }. Use `await $request.invokeTemplate` or `$request.post`. Handle errors.',
+            iparams: 'Generate **config/iparams.json**. Use standard fields (api_key, domain). Secure fields for auth.',
+            index: 'Generate **app/index.html**. Include Freshworks CRUD script `<script src="{{{appclient}}}"></script>`. Clean, modern UI using existing styles.',
+            app: 'Generate **app/scripts/app.js**. Use `client.init()`, `client.events.on("app.activated")`. Handle resize/interface logic.'
+        };
+
+        const result = await GeminiService.generateContent(
+            `Generate the file content for: **${fileType}**
+Context:
+${context || this.state.messages.map(m => m.text).join('\n')}
+
+**RULES:**
+1. Output **ONLY** the raw code/json. NO markdown blocks.
+2. FDK v3.0 Standards.
+3. For integrations, USE THE CORRECT 3RD PARTY ENDPOINTS identified in the blueprint.
+4. If writing JSON, ensure validity.`,
+            'You are a code generator. Output RAW TEXT only.'
+        );
+
+        if (result.success) {
+            let code = result.text.replace(/```\w*\n?/g, '').replace(/```$/g, '').trim();
+            this.state.generatedFiles[fileType] = code;
+            if (this.state.activeFile === fileType) {
+                document.getElementById('fdk-editor').value = code;
+            }
+        }
+    },
+
+    // ---- File Management ----
+    switchFile(file) {
+        this.state.activeFile = file;
+        this.render(); // Re-renders editor with new value
+    },
+
+    updateFileContent(val) {
+        this.state.generatedFiles[this.state.activeFile] = val;
+    },
+
+    saveFile() {
+        window.App.showToast(`Saved ${this.state.activeFile}`, 'success');
+        // In a real app, this might persist to local storage or disk
+    },
+
+    async downloadZip() {
+        if (!window.JSZip) {
+            window.App.showToast('JSZip not loaded. Check internet connection.', 'error');
             return;
         }
 
-        this.updateUI();
-    },
+        const zip = new JSZip();
+        zip.file('manifest.json', this.state.generatedFiles['manifest']);
+        zip.file('README.md', '# Generated FDK App\n\nRun `fdk run` to start.');
 
-    async startGeneration() {
-        this.state.step = 2;
-        this.updateUI();
-        this.state.logs = [];
+        const server = zip.folder('server');
+        server.file('server.js', this.state.generatedFiles['server']);
 
-        await this.log('🚀 Starting generation process...');
-        await this.log(`📋 Plan: ${this.state.analysis.product} app with ${this.state.analysis.locations.join(', ')}`);
+        const config = zip.folder('config');
+        config.file('iparams.json', this.state.generatedFiles['iparams']);
 
-        // 1. Generate Manifest
-        await this.log('📄 Generating manifest.json...');
-        await this.generateFile('manifest',
-            `Generate manifest.json for ${this.state.analysis.product} with locations: ${this.state.analysis.locations.join(', ')}. 
-             Include whitelisted-domains: ${this.state.analysis.apis?.join(', ')}.
-             Include events: ${this.state.analysis.events?.join(', ')}.
-             Use best practices. Return ONLY JSON.`);
+        const app = zip.folder('app');
+        app.file('index.html', this.state.generatedFiles['index']);
+        const scripts = app.folder('scripts');
+        scripts.file('app.js', this.state.generatedFiles['app']);
 
-        // 2. Generate Server (if needed)
-        if (this.state.analysis.locations?.includes('serverless_app') || this.state.analysis.events?.length > 0) {
-            await this.log('⚡ Generating server/server.js...');
-            await this.generateFile('server',
-                `Generate server.js for Freshworks serverless app.
-                 Handlers needed: ${this.state.analysis.events?.join(', ')}.
-                 Logic: ${this.state.analysis.reasoning}.
-                 Use modern JS. Return ONLY code.`);
-        } else {
-            await this.log('⏭️ Skipping server.js (Frontend only app)');
-        }
-
-        // 3. Generate Frontend
-        if (this.state.analysis.locations?.some(l => l.includes('sidebar') || l.includes('page'))) {
-            await this.log('🎨 Generating app/index.html...');
-            await this.generateFile('html',
-                `Generate index.html for Freshworks frontend app.
-                 Include: Freshworks SDK script, styles, minimal UI based on requirement.
-                 Return ONLY HTML.`);
-
-            await this.log('📜 Generating app/app.js...');
-            await this.generateFile('js',
-                `Generate app.js for Freshworks frontend.
-                 Initialize client.
-                 Implement logic for: ${this.state.analysis.reasoning}.
-                 Use client.request or client.db if mentioned.
-                 Return ONLY JS.`);
-        }
-
-        // 4. Iparams
-        await this.log('⚙️ Generating config/iparams.json...');
-        await this.generateFile('iparams',
-            `Generate iparams.json.
-             If APIs are used, ask for API Key.
-             If domain is needed, ask for Domain.
-             Return ONLY JSON.`);
-
-        await this.log('✅ Build Complete!');
-        setTimeout(() => {
-            this.state.step = 3;
-            this.updateUI();
-        }, 1000);
-    },
-
-    async generateFile(type, prompt) {
-        const result = await GeminiService.generateContent(prompt, "You are a code generator. Output only the file content. No markdown blocks if possible.");
-        let content = result.text || '// Error generating code';
-
-        // Clean markdown
-        if (type === 'manifest' || type === 'iparams') {
-            content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        } else {
-            content = content.replace(/```\w*\n?/g, '').replace(/```\n?/g, '').trim();
-        }
-
-        this.state.generatedFiles[type] = content;
-        await new Promise(r => setTimeout(r, 800)); // Simul delay
-    },
-
-    async log(msg) {
-        this.state.logs.push(msg);
-        this.updateUI(); // Inefficient but functional for this scale
-        // Scroll to bottom
-        const logEl = document.getElementById('build-logs');
-        if (logEl) logEl.scrollTop = logEl.scrollHeight;
-        await new Promise(r => setTimeout(r, 100));
-    },
-
-    reset() {
-        this.state.step = 0;
-        this.state.analysis = null;
-        this.state.generatedFiles = {};
-        this.state.logs = [];
-        this.updateUI();
-    },
-
-    showFile(type) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
-
-        let content = this.state.generatedFiles[type] || '// File not created';
-        let lang = 'javascript';
-        if (type === 'manifest' || type === 'iparams') lang = 'json';
-        if (type === 'html') lang = 'html';
-
-        const view = document.getElementById('code-viewer');
-        view.innerHTML = window.MarkdownRenderer.parse('```' + lang + '\n' + content + '\n```');
-    },
-
-    downloadZip() {
-        // Simple text download for now as prototype
-        const manifest = this.state.generatedFiles.manifest;
-        if (!manifest) return;
-
-        const blob = new Blob([JSON.stringify(this.state.generatedFiles, null, 2)], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `fdk-app-bundle.json`;
+        a.download = 'fdk-app.zip';
         a.click();
-        URL.revokeObjectURL(url);
-        window.App.showToast('Bundle JSON downloaded!', 'success');
+        window.App.showToast('Downloading app.zip...', 'success');
     },
 
-    updateUI() {
-        // Re-render whole module container
-        const container = document.getElementById('module-container');
-        if (container) container.innerHTML = this.render();
+    // ---- Nav ----
+    backToDiscovery() {
+        this.state.phase = 'discovery';
+        this.render();
+    },
 
-        // Restore scroll position of logs if generating
-        if (this.state.step === 2) {
-            const logEl = document.getElementById('build-logs');
-            if (logEl) logEl.scrollTop = logEl.scrollHeight;
+    resetAll() {
+        this.init();
+    },
+
+    // ---- File Input ----
+    async handleFileSelect() {
+        const fileInput = document.getElementById('fdk-file');
+        const previewEl = document.getElementById('fdk-file-preview');
+        if (fileInput.files.length > 0) {
+            this.attachments = [];
+            const names = [];
+            for (const file of fileInput.files) {
+                const processed = await window.App.readFile(file);
+                this.attachments.push({ name: file.name, data: processed });
+                names.push(file.name);
+            }
+            previewEl.textContent = `📎 Attached: ${names.join(', ')}`;
+            previewEl.style.display = 'block';
         }
     }
 };

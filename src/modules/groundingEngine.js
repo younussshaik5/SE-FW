@@ -3,7 +3,6 @@
 // ========================================
 
 import GeminiService from '../services/geminiService.js';
-import DemoResponses from '../data/demoResponses.js';
 
 const GroundingEngine = {
     render() {
@@ -94,19 +93,15 @@ const GroundingEngine = {
         const container = document.getElementById('ge-sources');
         if (!container) return;
 
-        const demoSources = DemoResponses.groundingEngine;
-        // Combine demo sources with user-uploaded "indexed" docs
-        const allSources = [
-            ...demoSources,
-            ...this.indexedDocs.map(d => ({
-                icon: '📄',
-                name: d.name,
-                type: 'Document',
-                items: '1 doc',
-                status: 'Indexed',
-                lastIndexed: 'Just now'
-            }))
-        ];
+        // Render user-uploaded "indexed" docs
+        const allSources = this.indexedDocs.map(d => ({
+            icon: '📄',
+            name: d.name,
+            type: 'Document',
+            items: '1 doc',
+            status: 'Indexed',
+            lastIndexed: 'Just now'
+        }));
 
         container.innerHTML = `
             <table style="width:100%;border-collapse:collapse;">
@@ -180,7 +175,7 @@ const GroundingEngine = {
                     </p>
                 </div>`;
         } else {
-            responseEl.innerHTML = `<div style="line-height:1.6;">${result.text}</div>`;
+            responseEl.innerHTML = `<div class="result-body">${window.MarkdownRenderer.parse(result.text)}</div>`;
         }
     }
 };

@@ -248,6 +248,49 @@ const App = {
             reader.onerror = error => reject(error);
             reader.readAsDataURL(file);
         });
+    },
+
+    // ---- Copy to Clipboard (Rich Text Support) ----
+    copyToClipboard(param) {
+        const el = typeof param === 'string' ? document.getElementById(param) : param;
+        if (!el) return;
+
+        const plainText = el.innerText;
+        const htmlContent = el.innerHTML;
+
+        // Modern Clipboard API
+        if (navigator.clipboard && window.ClipboardItem) {
+            const blobText = new Blob([plainText], { type: 'text/plain' });
+            const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+            const item = new ClipboardItem({
+                'text/plain': blobText,
+                'text/html': blobHtml
+            });
+
+            navigator.clipboard.write([item]).then(() => {
+                this.showToast('Copied to clipboard (with formatting)!', 'success');
+            }).catch(err => {
+                console.error('Clipboard error:', err);
+                this.fallbackCopy(el);
+            });
+        } else {
+            this.fallbackCopy(el);
+        }
+    },
+
+    fallbackCopy(el) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        try {
+            document.execCommand('copy');
+            this.showToast('Copied to clipboard!', 'success');
+        } catch (err) {
+            this.showToast('Failed to copy', 'danger');
+        }
+        selection.removeAllRanges();
     }
 };
 

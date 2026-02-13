@@ -94,11 +94,18 @@ ${industry ? `Industry: ${industry}` : ''}
 
 Use any attached technical specs to accurately represent the capabilities.
 
-Provide:
-1. 2-3 strategic benefit framings with emoji bullets, each with a **bold title** and detailed explanation relevant to ${persona}'s focus areas
-2. Recommended talking points (3 bullet points)
+**Required output structure:**
 
-Format using Markdown (bolding, lists).
+## Strategic Benefits for ${persona}
+2-3 strategic benefit framings with emoji bullets, each with a **bold title** and detailed explanation relevant to ${persona}'s focus areas.
+
+## Impact Summary
+| Technical Feature | Strategic Benefit | ${persona} KPI Impact |
+| --- | --- | --- |
+(Map each aspect to a measurable KPI)
+
+## Recommended Talking Points
+3 bullet points tailored for ${persona}'s vocabulary and priorities.
 
 Frame for ${persona}'s priorities:
 - CIO: IT governance, system consolidation, risk, compliance, total cost of ownership
@@ -117,7 +124,7 @@ Frame for ${persona}'s priorities:
                     card.innerHTML = `
                         <div class="result-header">
                             <h2>${persona === 'CIO' ? '🖥️' : persona === 'CFO' ? '💰' : persona === 'CEO' ? '👔' : '⚙️'} ${persona} Translation</h2>
-                            <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText(this.closest('.glass-card').querySelector('.result-content').innerText).then(()=>window.App.showToast('Copied!','success'))">📋 Copy</button>
+                            <button class="btn btn-sm btn-secondary" onclick="window.App.copyToClipboard(this.closest('.glass-card').querySelector('.result-content'))">📋 Copy</button>
                         </div>
                         <div class="result-content">${window.MarkdownRenderer ? window.MarkdownRenderer.parse(result.text) : result.text}</div>
                         <div class="result-meta" style="margin-top:var(--space-4); opacity:0.8;">${badge}</div>
