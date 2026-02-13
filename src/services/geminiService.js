@@ -10,8 +10,8 @@ const GeminiService = {
 
     init() {
         this.openRouterKey = localStorage.getItem('openrouter_api_key') || window.APP_CONFIG?.OPENROUTER_API_KEY || null;
-        this.openRouterModel = localStorage.getItem('openrouter_model') || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free';
-        this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'openai/gpt-5-nano';
+        this.openRouterModel = localStorage.getItem('openrouter_model') || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free';
+        this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'google/gemma-3-27b-it:free';
         this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'nvidia/nemotron-nano-12b-v2-vl:free';
         this.tertiaryMultimodalModel = localStorage.getItem('openrouter_multimodal_tertiary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || 'qwen/qwen3-vl-30b-a3b-instruct';
         this.googleAIKey = localStorage.getItem('google_ai_key') || window.APP_CONFIG?.GOOGLE_AI_KEY || null;
@@ -184,27 +184,22 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
         };
 
         const hasAttachments = attachments?.length > 0;
-        const initialModel = hasAttachments
-            ? (this.multimodalModel || 'openai/gpt-5-nano')
-            : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free');
-
-        // Create a list of models to try in order
+        // Create a list of models to try in order (Gemma -> Nvidia -> Qwen -> Google)
         const retryChain = [
             { id: initialModel, provider: 'openrouter' }
         ];
 
-        if (hasAttachments) {
-            const fallbacks = [
-                { id: this.multimodalModel || 'openai/gpt-5-nano', provider: 'openrouter' },
-                { id: this.secondaryMultimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free', provider: 'openrouter' },
-                { id: this.tertiaryMultimodalModel || 'qwen/qwen3-vl-30b-a3b-instruct', provider: 'openrouter' },
-                { id: 'gemini-3-flash-preview', provider: 'google' } // Final Native Fallback
-            ];
+        // Always include fallbacks to ensure robustness for both text and multimodal
+        const fallbacks = [
+            { id: this.multimodalModel || 'google/gemma-3-27b-it:free', provider: 'openrouter' },
+            { id: this.secondaryMultimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free', provider: 'openrouter' },
+            { id: this.tertiaryMultimodalModel || 'qwen/qwen3-vl-30b-a3b-instruct', provider: 'openrouter' },
+            { id: 'gemini-3-flash-preview', provider: 'google' } // Final Native Fallback
+        ];
 
-            fallbacks.forEach(fm => {
-                if (!retryChain.find(m => m.id === fm.id)) retryChain.push(fm);
-            });
-        }
+        fallbacks.forEach(fm => {
+            if (!retryChain.find(m => m.id === fm.id)) retryChain.push(fm);
+        });
 
         let lastError = null;
         for (const modelToTry of retryChain) {
