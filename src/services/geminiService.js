@@ -12,6 +12,7 @@ const GeminiService = {
         this.openRouterKey = localStorage.getItem('openrouter_api_key') || window.APP_CONFIG?.OPENROUTER_API_KEY || null;
         this.openRouterModel = localStorage.getItem('openrouter_model') || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free';
         this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'openai/gpt-5-nano';
+        this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'nvidia/nemotron-nano-12b-v2-vl:free';
     },
 
     setOpenRouterKey(key) {
@@ -30,6 +31,12 @@ const GeminiService = {
         this.multimodalModel = model;
         localStorage.setItem('openrouter_multimodal_model', model);
         if (window.APP_CONFIG) window.APP_CONFIG.OPENROUTER_MULTIMODAL_MODEL = model;
+    },
+
+    setSecondaryMultimodalModel(model) {
+        this.secondaryMultimodalModel = model;
+        localStorage.setItem('openrouter_multimodal_secondary_model', model);
+        if (window.APP_CONFIG) window.APP_CONFIG.OPENROUTER_MULTIMODAL_SECONDARY_MODEL = model;
     },
 
     isLiveMode() {
@@ -57,13 +64,8 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
 `;
         const unifiedSystemInstruction = (systemInstruction ? systemInstruction + "\n" : "") + groundingPrompt;
 
-        const makeRequest = async (modelToUse) => {
-            // Auto-select model: use multimodal model when attachments are present
+        const makeRequest = async (model) => {
             const hasAttachments = attachments?.length > 0;
-            const model = modelToUse || (hasAttachments
-                ? (this.multimodalModel || 'openai/gpt-5-nano')
-                : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free'));
-
             const messages = [];
             if (unifiedSystemInstruction) messages.push({ role: 'system', content: unifiedSystemInstruction });
 
@@ -111,30 +113,42 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             return { success: true, text, source: 'openrouter', model };
         };
 
-        try {
-            return await makeRequest();
-        } catch (error) {
-            console.error('Primary Model Failed:', error);
+        const hasAttachments = attachments?.length > 0;
+        const initialModel = hasAttachments
+            ? (this.multimodalModel || 'openai/gpt-5-nano')
+            : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free');
 
-            // Fallback Logic
-            // If primary failed and we haven't tried the fallback yet, try GPT-4o-mini
-            const fallbackModel = 'openai/gpt-5-nano';
-            const currentModel = attachments?.length > 0
-                ? (this.multimodalModel || 'openai/gpt-5-nano')
-                : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free');
+        // Create a list of models to try in order
+        const retryChain = [initialModel];
+        if (hasAttachments) {
+            const primaryFallback = this.multimodalModel || 'openai/gpt-5-nano';
+            const secondaryFallback = this.secondaryMultimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free';
 
-            if (currentModel !== fallbackModel) {
-                console.warn(`Attempting fallback to ${fallbackModel}...`);
-                try {
-                    return await makeRequest(fallbackModel);
-                } catch (fallbackError) {
-                    console.error('Fallback Model Failed:', fallbackError);
-                    return { success: false, error: `Primary and Fallback Models Failed. Primary: ${error.message}. Fallback: ${fallbackError.message}` };
-                }
+            if (initialModel !== primaryFallback) {
+                retryChain.push(primaryFallback);
             }
-
-            return { success: false, error: `AI Request Failed: ${error.message}` };
+            if (!retryChain.includes(secondaryFallback)) {
+                retryChain.push(secondaryFallback);
+            }
         }
+
+        let lastError = null;
+        for (const modelToTry of retryChain) {
+            try {
+                if (modelToTry !== initialModel) {
+                    console.warn(`[AI] Primary failed. Attempting fallback to ${modelToTry}...`);
+                }
+                return await makeRequest(modelToTry);
+            } catch (error) {
+                console.error(`[AI] Model ${modelToTry} failed:`, error.message);
+                lastError = error;
+            }
+        }
+
+        return {
+            success: false,
+            error: `All AI models failed. Attempts: ${retryChain.join(' -> ')}. Last error: ${lastError?.message}`
+        };
     }
 };
 
