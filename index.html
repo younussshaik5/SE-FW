@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Freshworks SE Workstation — AI-powered solution engineering toolkit">
+    <title>SE Workstation | Freshworks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="src/styles/app.css">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="src/styles/sidebar.css">
+    <link rel="stylesheet" href="src/styles/modules.css">
+    <link rel="stylesheet" href="src/styles/components.css">
+    <link rel="stylesheet" href="src/styles/animations.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">SE Workstation</span>
+                </div>
+                <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+                    <span class="toggle-icon">◀</span>
+                </button>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="nav-group">
+                    <div class="nav-group-label">Strategic</div>
+                    <button class="nav-item active" data-module="demo-strategy">
+                        <span class="nav-icon">🎯</span>
+                        <span class="nav-label">Demo Strategy</span>
+                    </button>
+                    <button class="nav-item" data-module="risk-report">
+                        <span class="nav-icon">⚠️</span>
+                        <span class="nav-label">Risk Report</span>
+                    </button>
+                    <button class="nav-item" data-module="value-architecture">
+                        <span class="nav-icon">💰</span>
+                        <span class="nav-label">Value Architecture</span>
+                    </button>
+                    <button class="nav-item" data-module="battlecards">
+                        <span class="nav-icon">⚔️</span>
+                        <span class="nav-label">Battlecards</span>
+                    </button>
+                    <button class="nav-item" data-module="deal-meddpicc">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-label">Deal MEDDPICC</span>
+                    </button>
+                    <button class="nav-item" data-module="exec-translator">
+                        <span class="nav-icon">🎤</span>
+                        <span class="nav-label">Exec Translator</span>
+                    </button>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">Technical</div>
+                    <button class="nav-item" data-module="data-seeder">
+                        <span class="nav-icon">🌱</span>
+                        <span class="nav-label">Data Seeder</span>
+                    </button>
+                    <button class="nav-item" data-module="tech-utilities">
+                        <span class="nav-icon">✉️</span>
+                        <span class="nav-label">Tech Utilities</span>
+                    </button>
+                    <button class="nav-item" data-module="fdk-builder">
+                        <span class="nav-icon">🔧</span>
+                        <span class="nav-label">FDK Builder</span>
+                    </button>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">Agents</div>
+                    <button class="nav-item" data-module="instance-builder">
+                        <span class="nav-icon">🏗️</span>
+                        <span class="nav-label">Instance Builder</span>
+                    </button>
+                    <button class="nav-item" data-module="portal-generator">
+                        <span class="nav-icon">🌐</span>
+                        <span class="nav-label">Portal Generator</span>
+                    </button>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">System</div>
+                    <button class="nav-item" data-module="grounding-engine">
+                        <span class="nav-icon">🧠</span>
+                        <span class="nav-label">Grounding Engine</span>
+                    </button>
+                    <button class="nav-item" data-module="settings">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-label">Settings</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div id="demo-mode-indicator" class="demo-indicator">
+                    <span class="demo-dot"></span>
+                    <span class="demo-text">Demo Mode</span>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar" id="user-avatar">SE</div>
+                    <span class="user-name" id="user-name">Solution Engineer</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content">
+            <div id="demo-banner" class="demo-banner">
+                <span>⚡ Demo Mode — Sign in with Google or add GEMINI_API_KEY to enable live AI</span>
+                <button id="dismiss-banner" class="banner-dismiss">✕</button>
+            </div>
+            <div id="module-container" class="module-container">
+                <!-- Module content rendered here by JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/config.js"></script>
+    <script type="module" src="src/utils/markdownRenderer.js"></script>
+    <script type="module" src="src/services/geminiService.js"></script>
+    <script type="module" src="src/services/freshworksService.js"></script>
+    <script type="module" src="src/services/authService.js"></script>
+    <script type="module" src="src/services/slackService.js"></script>
+    <script type="module" src="src/data/demoResponses.js"></script>
+    <script type="module" src="src/modules/demoStrategy.js"></script>
+    <script type="module" src="src/modules/riskReport.js"></script>
+    <script type="module" src="src/modules/valueArchitecture.js"></script>
+    <script type="module" src="src/modules/battlecards.js"></script>
+    <script type="module" src="src/modules/dealMeddpicc.js"></script>
+    <script type="module" src="src/modules/execTranslator.js"></script>
+    <script type="module" src="src/modules/dataSeeder.js"></script>
+    <script type="module" src="src/modules/techUtilities.js"></script>
+    <script type="module" src="src/modules/fdkBuilder.js"></script>
+    <script type="module" src="src/modules/instanceBuilder.js"></script>
+    <script type="module" src="src/modules/portalGenerator.js"></script>
+    <script type="module" src="src/modules/groundingEngine.js"></script>
+    <script type="module" src="src/modules/settings.js"></script>
+    <script type="module" src="src/app.js"></script>
+</body>
+
+</html>

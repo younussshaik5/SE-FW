@@ -1,0 +1,162 @@
+// ========================================
+// Module 3: Value Architecture (ROI/TCO)
+// ========================================
+
+import GeminiService from '../services/geminiService.js';
+import DemoResponses from '../data/demoResponses.js';
+
+const ValueArchitecture = {
+    render() {
+        return `
+        <div class="module-page">
+            <div class="module-header">
+                <h1>💰 Value Architecture</h1>
+                <p class="module-desc">Convert operational metrics into a 3-year business case for CFO-level stakeholders.</p>
+            </div>
+
+            <div class="module-grid">
+                <div class="glass-card module-panel">
+                    <h2>📊 Current State Inputs</h2>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">
+                        <label class="form-label">Company Name</label>
+                        <input id="roi-company" class="form-input" placeholder="e.g., Acme Corp" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">
+                        <label class="form-label">Number of Agents</label>
+                        <input id="roi-agents" class="form-input" type="number" placeholder="e.g., 150" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">
+                        <label class="form-label">Current Tools & Annual Costs</label>
+                        <textarea id="roi-current-tools" class="form-textarea" rows="4" placeholder="List current tools and costs...
+
+e.g., Zendesk Enterprise: $270,000/yr
+Talkdesk: $84,000/yr
+Intercom: $48,000/yr"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">
+                        <label class="form-label">Average Labor Burden Rate ($/hr)</label>
+                        <input id="roi-labor-rate" class="form-input" type="number" placeholder="e.g., 35" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">
+                        <label class="form-label">Manual Reporting FTEs</label>
+                        <input id="roi-manual-ftes" class="form-input" type="number" step="0.5" placeholder="e.g., 2" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">
+                        <label class="form-label">Proposed Freshworks Plan</label>
+                        <select id="roi-plan" class="form-select">
+                            <option value="growth">Growth ($18/agent/mo)</option>
+                            <option value="pro" selected>Pro ($49/agent/mo)</option>
+                            <option value="enterprise">Enterprise ($79/agent/mo)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">
+                        <label class="form-label">Additional Context</label>
+                        <textarea id="roi-context" class="form-textarea" rows="3" placeholder="Any additional context for the value analysis...
+                        
+e.g., Onboarding latency is 8 weeks, Q4 SLA misses caused $180K in churn"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">
+                         <label class="form-label">Attachments (Current Contracts, Usage Reports)</label>
+                         <input type="file" id="roi-file" class="form-input" multiple />
+                    </div>
+                    <button class="btn btn-primary btn-lg" onclick="ValueArchitecture.generateROI()" style="width:100%">
+                        💰 Generate ROI Report
+                    </button>
+                </div>
+
+                <div class="glass-card module-panel">
+                    <div class="result-header">
+                        <h2>📈 3-Year Value Report</h2>
+                        <div class="result-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="ValueArchitecture.copyResult()">📋 Copy</button>
+                            <button class="btn btn-sm btn-secondary" onclick="ValueArchitecture.exportResult()">📥 Export</button>
+                        </div>
+                    </div>
+                    <div id="roi-result" class="result-content">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">💰</div>
+                            <h3>Enter current state metrics</h3>
+                            <p>AI will calculate headcount avoidance, direct savings, and generate a CFO-ready recommendation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    },
+
+    init() { },
+
+    async generateROI() {
+        const data = {
+            company: document.getElementById('roi-company').value,
+            agents: document.getElementById('roi-agents').value,
+            currentTools: document.getElementById('roi-current-tools').value,
+            laborRate: document.getElementById('roi-labor-rate').value,
+            manualFTEs: document.getElementById('roi-manual-ftes').value,
+            plan: document.getElementById('roi-plan').value,
+            context: document.getElementById('roi-context').value
+        };
+
+        const resultEl = document.getElementById('roi-result');
+        resultEl.innerHTML = '<div class="loading-shimmer" style="height:400px"></div>';
+
+        const planPricing = { growth: 18, pro: 49, enterprise: 79 };
+        const monthlyPerAgent = planPricing[data.plan];
+
+        const fileInput = document.getElementById('roi-file');
+        const attachments = [];
+        if (fileInput.files.length > 0) {
+            for (const file of fileInput.files) {
+                attachments.push(await window.App.readFile(file));
+            }
+        }
+
+        const prompt = `Generate a 3-Year Value Architecture / ROI-TCO report for:
+Company: ${data.company}
+Agents: ${data.agents}
+Current Tools & Costs: ${data.currentTools}
+Labor Rate: $${data.laborRate}/hr
+Manual Reporting FTEs: ${data.manualFTEs}
+Proposed: Freshworks ${data.plan} plan at $${monthlyPerAgent}/agent/month
+Context: ${data.context}
+
+Analyze any attached contracts or usage reports for more accurate cost modeling.
+
+Include:
+1. Current State cost table
+2. Proposed Freshworks cost table (3-year)
+3. Headcount avoidance model
+4. Direct labor savings calculation
+5. 3-Year value summary with total savings, Year 1 ROI%, tool consolidation
+6. CFO recommendation paragraph
+
+Use real math based on inputs. Format with tables.`;
+
+        const result = await GeminiService.generateContent(prompt, 'You are a value engineering expert creating CFO-level business cases.', attachments);
+
+        if (result.demo || !result.success) {
+            resultEl.innerHTML = DemoResponses.valueArchitecture;
+        } else {
+            resultEl.innerHTML = result.text;
+        }
+    },
+
+    copyResult() {
+        const el = document.getElementById('roi-result');
+        navigator.clipboard.writeText(el.innerText).then(() => window.App.showToast('Copied!', 'success'));
+    },
+
+    exportResult() {
+        const el = document.getElementById('roi-result');
+        const blob = new Blob([el.innerText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `roi-report-${new Date().toISOString().split('T')[0]}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+};
+
+window.ValueArchitecture = ValueArchitecture;
+export default ValueArchitecture;
