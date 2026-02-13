@@ -183,7 +183,8 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             return { success: true, text, source: 'google-ai-studio', model };
         };
 
-        const hasAttachments = attachments?.length > 0;
+        const initialModel = this.openRouterModel || 'google/gemma-3-27b-it:free';
+
         // Create a list of models to try in order (Gemma -> Nvidia -> Qwen -> Google)
         const retryChain = [
             { id: initialModel, provider: 'openrouter' }
