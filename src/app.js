@@ -219,6 +219,23 @@ const App = {
         }, 4000);
     },
 
+    // ---- UI Helpers ----
+    getAiBadge(result) {
+        if (!result) return '';
+        if (result.demo) {
+            return `<div class="ai-badge demo-badge">🏠 Local Demo Data</div>`;
+        }
+
+        const sources = {
+            'chrome-nano': '✨ Chrome Built-in AI',
+            'gemini-api': '💎 Google Gemini API',
+            'openrouter': '🌐 OpenRouter API'
+        };
+
+        const label = sources[result.source] || 'Unknown AI';
+        return `<div class="ai-badge live-badge">🤖 ${label}</div>`;
+    },
+
     // ---- File Handling Helper ----
     readFile(file) {
         return new Promise((resolve, reject) => {
