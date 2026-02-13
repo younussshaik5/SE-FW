@@ -73,59 +73,65 @@ const GeminiService = {
                 }
             }
 
-            // 2. Standard Gemini API Call
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent${this.getAuthHeader()}`;
-
-            // Construct parts array with text and optional attachments
-            const parts = [{ text: prompt }];
-
-            if (attachments && attachments.length > 0) {
-                attachments.forEach(file => {
-                    parts.push({
-                        inline_data: {
-                            mime_type: file.mimeType,
-                            data: file.data
-                        }
-                    });
-                });
-            }
-
-            const body = {
-                contents: [{ parts }],
-            };
-
-            if (tools && tools.length > 0) {
-                body.tools = tools;
-            }
-
-            if (systemInstruction) {
-                body.systemInstruction = { parts: [{ text: systemInstruction }] };
-            }
-
-            const headers = { 'Content-Type': 'application/json' };
-            if (this.oauthToken) {
-                headers['Authorization'] = `Bearer ${this.oauthToken}`;
-            }
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(body)
-            });
-
-            if (!response.ok) {
-                throw new Error(`Gemini API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-            return { success: true, demo: false, text, source: 'gemini-api' };
-        } catch (error) {
-            console.error('Gemini API Error:', error);
-            return { success: false, demo: false, error: error.message };
         }
+
+            // 2. Standard Gemini API Call
+            if (!this.apiKey && !this.oauthToken) {
+            return { success: false, demo: true, message: 'Configuration Error: No API Key found and Chrome AI unavailable/failed. Please add an API Key or enable Chrome Built-in AI.' };
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent${this.getAuthHeader()}`;
+
+        // Construct parts array with text and optional attachments
+        const parts = [{ text: prompt }];
+
+        if (attachments && attachments.length > 0) {
+            attachments.forEach(file => {
+                parts.push({
+                    inline_data: {
+                        mime_type: file.mimeType,
+                        data: file.data
+                    }
+                });
+            });
+        }
+
+        const body = {
+            contents: [{ parts }],
+        };
+
+        if (tools && tools.length > 0) {
+            body.tools = tools;
+        }
+
+        if (systemInstruction) {
+            body.systemInstruction = { parts: [{ text: systemInstruction }] };
+        }
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (this.oauthToken) {
+            headers['Authorization'] = `Bearer ${this.oauthToken}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        return { success: true, demo: false, text, source: 'gemini-api' };
+    } catch(error) {
+        console.error('Gemini API Error:', error);
+        return { success: false, demo: false, error: error.message };
     }
+}
 };
 
 GeminiService.init();
