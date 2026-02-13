@@ -13,6 +13,7 @@ const GeminiService = {
         this.openRouterModel = localStorage.getItem('openrouter_model') || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free';
         this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'openai/gpt-5-nano';
         this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'nvidia/nemotron-nano-12b-v2-vl:free';
+        this.tertiaryMultimodalModel = localStorage.getItem('openrouter_multimodal_tertiary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || 'qwen/qwen3-vl-30b-a3b-instruct';
     },
 
     setOpenRouterKey(key) {
@@ -37,6 +38,12 @@ const GeminiService = {
         this.secondaryMultimodalModel = model;
         localStorage.setItem('openrouter_multimodal_secondary_model', model);
         if (window.APP_CONFIG) window.APP_CONFIG.OPENROUTER_MULTIMODAL_SECONDARY_MODEL = model;
+    },
+
+    setTertiaryMultimodalModel(model) {
+        this.tertiaryMultimodalModel = model;
+        localStorage.setItem('openrouter_multimodal_tertiary_model', model);
+        if (window.APP_CONFIG) window.APP_CONFIG.OPENROUTER_MULTIMODAL_TERTIARY_MODEL = model;
     },
 
     isLiveMode() {
@@ -123,12 +130,16 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
         if (hasAttachments) {
             const primaryFallback = this.multimodalModel || 'openai/gpt-5-nano';
             const secondaryFallback = this.secondaryMultimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free';
+            const tertiaryFallback = this.tertiaryMultimodalModel || 'qwen/qwen3-vl-30b-a3b-instruct';
 
             if (initialModel !== primaryFallback) {
                 retryChain.push(primaryFallback);
             }
             if (!retryChain.includes(secondaryFallback)) {
                 retryChain.push(secondaryFallback);
+            }
+            if (!retryChain.includes(tertiaryFallback)) {
+                retryChain.push(tertiaryFallback);
             }
         }
 
