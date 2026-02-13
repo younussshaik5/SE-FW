@@ -137,6 +137,7 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
                 throw new Error(errorData.error?.message || response.status);
             }
 
+            const data = await response.json();
             const text = data.choices?.[0]?.message?.content || '';
             return { success: true, text, source: 'openrouter', model };
         };
@@ -225,7 +226,7 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
 
         return {
             success: false,
-            error: `All AI models failed. Attempts: ${retryChain.join(' -> ')}. Last error: ${lastError?.message}`
+            error: `All AI models failed. Attempts: ${retryChain.map(m => m.id).join(' -> ')}. Last error: ${lastError?.message}`
         };
     }
 };
