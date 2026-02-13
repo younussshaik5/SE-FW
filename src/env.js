@@ -8,5 +8,6 @@ window.ENV = {
     OPENROUTER_MODEL: "google/gemini-2.0-flash-lite-preview-02-05:free",
     OPENROUTER_MULTIMODAL_MODEL: "openai/gpt-5-nano",
     OPENROUTER_MULTIMODAL_SECONDARY_MODEL: "nvidia/nemotron-nano-12b-v2-vl:free",
-    OPENROUTER_MULTIMODAL_TERTIARY_MODEL: "qwen/qwen3-vl-30b-a3b-instruct"
+    OPENROUTER_MULTIMODAL_TERTIARY_MODEL: "qwen/qwen3-vl-30b-a3b-instruct",
+    GOOGLE_AI_KEY: "AIzaSyBtmv2LSJYiXVLfWpkwUoPv33OkNCSxMAw"
 };

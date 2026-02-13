@@ -10,6 +10,7 @@ window.APP_CONFIG = {
     OPENROUTER_MULTIMODAL_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_MODEL || "openai/gpt-5-nano",
     OPENROUTER_MULTIMODAL_SECONDARY_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || "nvidia/nemotron-nano-12b-v2-vl:free",
     OPENROUTER_MULTIMODAL_TERTIARY_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || "qwen/qwen3-vl-30b-a3b-instruct",
+    GOOGLE_AI_KEY: window.ENV?.GOOGLE_AI_KEY || "",
 
     // 2. Proxy Server URL
     // If you deploy the Node.js proxy to Vercel/Heroku, put the URL here.

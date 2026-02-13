@@ -14,6 +14,7 @@ const GeminiService = {
         this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'openai/gpt-5-nano';
         this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'nvidia/nemotron-nano-12b-v2-vl:free';
         this.tertiaryMultimodalModel = localStorage.getItem('openrouter_multimodal_tertiary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || 'qwen/qwen3-vl-30b-a3b-instruct';
+        this.googleAIKey = localStorage.getItem('google_ai_key') || window.APP_CONFIG?.GOOGLE_AI_KEY || null;
     },
 
     setOpenRouterKey(key) {
@@ -44,6 +45,12 @@ const GeminiService = {
         this.tertiaryMultimodalModel = model;
         localStorage.setItem('openrouter_multimodal_tertiary_model', model);
         if (window.APP_CONFIG) window.APP_CONFIG.OPENROUTER_MULTIMODAL_TERTIARY_MODEL = model;
+    },
+
+    setGoogleAIKey(key) {
+        this.googleAIKey = key;
+        localStorage.setItem('google_ai_key', key);
+        if (window.APP_CONFIG) window.APP_CONFIG.GOOGLE_AI_KEY = key;
     },
 
     isLiveMode() {
@@ -79,23 +86,34 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             // OpenRouter/OpenAI style messages
             let userContent = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
 
-            // Handle attachments — multimodal content parts
+            // Handle attachments — support image, audio, video, and PDF
             if (hasAttachments) {
                 const contentParts = [{ type: 'text', text: userContent }];
                 attachments.forEach(file => {
-                    contentParts.push({
-                        type: 'image_url',
-                        image_url: {
-                            url: `data:${file.mimeType};base64,${file.data}`
-                        }
-                    });
+                    if (file.mimeType.startsWith('image/')) {
+                        contentParts.push({
+                            type: 'image_url',
+                            image_url: { url: `data:${file.mimeType};base64,${file.data}` }
+                        });
+                    } else if (file.mimeType.startsWith('audio/')) {
+                        contentParts.push({
+                            type: 'input_audio',
+                            input_audio: { data: file.data, format: file.mimeType.split('/')[1] }
+                        });
+                    } else {
+                        // For PDFs and other files, use OpenRouter's file structure
+                        contentParts.push({
+                            type: 'file',
+                            file: { data: file.data, mime_type: file.mimeType }
+                        });
+                    }
                 });
                 messages.push({ role: 'user', content: contentParts });
             } else {
                 messages.push({ role: 'user', content: userContent });
             }
 
-            console.log(`[AI] Using model: ${model}${hasAttachments ? ' (multimodal — attachments detected)' : ' (text)'}`);
+            console.log(`[AI] Using model: ${model}${hasAttachments ? ' (multimodal detected)' : ' (text)'}`);
 
             const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -106,7 +124,11 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
                 },
                 body: JSON.stringify({
                     model,
-                    messages
+                    messages,
+                    // Auto-enable OCR for non-multimodal models if needed
+                    provider: {
+                        pdf_engine: 'pdf-text'
+                    }
                 })
             });
 
@@ -115,9 +137,49 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
                 throw new Error(errorData.error?.message || response.status);
             }
 
-            const data = await response.json();
             const text = data.choices?.[0]?.message?.content || '';
             return { success: true, text, source: 'openrouter', model };
+        };
+
+        const makeGoogleRequest = async (model) => {
+            const apiKey = this.googleAIKey || window.APP_CONFIG?.GOOGLE_AI_KEY;
+            if (!apiKey) throw new Error('Google AI Key not configured');
+
+            const contents = [];
+            // Google Gemini API structure
+            if (unifiedSystemInstruction) {
+                // Gemini 1.5/2.0 supports system_instruction at root, 
+                // but for simple REST we can prepend to prompt or use 'system' role depending on API version
+            }
+
+            const apiParts = [{ text: prompt }];
+            attachments.forEach(file => {
+                apiParts.push({
+                    inline_data: {
+                        mime_type: file.mimeType,
+                        data: file.data
+                    }
+                });
+            });
+
+            contents.push({ role: 'user', parts: apiParts });
+
+            console.log(`[AI] Using NATIVE Google Gemini: ${model}`);
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || response.status);
+            }
+
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            return { success: true, text, source: 'google-ai-studio', model };
         };
 
         const hasAttachments = attachments?.length > 0;
@@ -126,32 +188,37 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free');
 
         // Create a list of models to try in order
-        const retryChain = [initialModel];
-        if (hasAttachments) {
-            const primaryFallback = this.multimodalModel || 'openai/gpt-5-nano';
-            const secondaryFallback = this.secondaryMultimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free';
-            const tertiaryFallback = this.tertiaryMultimodalModel || 'qwen/qwen3-vl-30b-a3b-instruct';
+        const retryChain = [
+            { id: initialModel, provider: 'openrouter' }
+        ];
 
-            if (initialModel !== primaryFallback) {
-                retryChain.push(primaryFallback);
-            }
-            if (!retryChain.includes(secondaryFallback)) {
-                retryChain.push(secondaryFallback);
-            }
-            if (!retryChain.includes(tertiaryFallback)) {
-                retryChain.push(tertiaryFallback);
-            }
+        if (hasAttachments) {
+            const fallbacks = [
+                { id: this.multimodalModel || 'openai/gpt-5-nano', provider: 'openrouter' },
+                { id: 'gemini-1.5-flash', provider: 'google' }, // Stable Native Fallback
+                { id: this.secondaryMultimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free', provider: 'openrouter' },
+                { id: this.tertiaryMultimodalModel || 'qwen/qwen3-vl-30b-a3b-instruct', provider: 'openrouter' }
+            ];
+
+            fallbacks.forEach(fm => {
+                if (!retryChain.find(m => m.id === fm.id)) retryChain.push(fm);
+            });
         }
 
         let lastError = null;
         for (const modelToTry of retryChain) {
             try {
-                if (modelToTry !== initialModel) {
-                    console.warn(`[AI] Primary failed. Attempting fallback to ${modelToTry}...`);
+                if (modelToTry.id !== initialModel) {
+                    console.warn(`[AI] Primary failed. Attempting fallback to ${modelToTry.id} (${modelToTry.provider})...`);
                 }
-                return await makeRequest(modelToTry);
+
+                if (modelToTry.provider === 'google') {
+                    return await makeGoogleRequest(modelToTry.id);
+                } else {
+                    return await makeRequest(modelToTry.id);
+                }
             } catch (error) {
-                console.error(`[AI] Model ${modelToTry} failed:`, error.message);
+                console.error(`[AI] Model ${modelToTry.id} failed:`, error.message);
                 lastError = error;
             }
         }
