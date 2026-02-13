@@ -61,8 +61,8 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             // Auto-select model: use multimodal model when attachments are present
             const hasAttachments = attachments?.length > 0;
             const model = modelToUse || (hasAttachments
-                ? (this.multimodalModel || 'openai/gpt-4o-mini')
-                : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free'));
+                ? (this.multimodalModel || 'openai/gpt-5-nano')
+                : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free'));
 
             const messages = [];
             if (unifiedSystemInstruction) messages.push({ role: 'system', content: unifiedSystemInstruction });
