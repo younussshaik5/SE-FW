@@ -6,7 +6,7 @@
 window.APP_CONFIG = {
     // 1. OpenRouter API (Primary)
     OPENROUTER_API_KEY: window.ENV?.OPENROUTER_API_KEY || "",
-    OPENROUTER_MODEL: window.ENV?.OPENROUTER_MODEL || "google/gemma-3-27b-it:free",
+    OPENROUTER_MODEL: window.ENV?.OPENROUTER_MODEL || "google/gemini-2.0-flash-lite-preview-02-05:free",
     OPENROUTER_MULTIMODAL_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_MODEL || "openai/gpt-5-nano",
 
     // 2. Proxy Server URL

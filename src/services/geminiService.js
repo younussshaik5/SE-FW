@@ -10,7 +10,7 @@ const GeminiService = {
 
     init() {
         this.openRouterKey = localStorage.getItem('openrouter_api_key') || window.APP_CONFIG?.OPENROUTER_API_KEY || null;
-        this.openRouterModel = localStorage.getItem('openrouter_model') || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free';
+        this.openRouterModel = localStorage.getItem('openrouter_model') || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free';
         this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'openai/gpt-5-nano';
     },
 
@@ -121,7 +121,7 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             const fallbackModel = 'openai/gpt-5-nano';
             const currentModel = attachments?.length > 0
                 ? (this.multimodalModel || 'openai/gpt-5-nano')
-                : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free');
+                : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free');
 
             if (currentModel !== fallbackModel) {
                 console.warn(`Attempting fallback to ${fallbackModel}...`);
