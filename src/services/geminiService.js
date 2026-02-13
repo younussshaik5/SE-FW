@@ -11,7 +11,7 @@ const GeminiService = {
     init() {
         this.openRouterKey = localStorage.getItem('openrouter_api_key') || window.APP_CONFIG?.OPENROUTER_API_KEY || null;
         this.openRouterModel = localStorage.getItem('openrouter_model') || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free';
-        this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'qwen/qwen2.5-vl-32b-instruct:free';
+        this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'google/gemini-2.5-flash-lite';
     },
 
     setOpenRouterKey(key) {
@@ -61,7 +61,7 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             // Auto-select model: use multimodal model when attachments are present
             const hasAttachments = attachments?.length > 0;
             const model = modelToUse || (hasAttachments
-                ? (this.multimodalModel || 'qwen/qwen2.5-vl-32b-instruct:free')
+                ? (this.multimodalModel || 'google/gemini-2.5-flash-lite')
                 : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free'));
 
             const messages = [];
@@ -117,10 +117,10 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             console.error('Primary Model Failed:', error);
 
             // Fallback Logic
-            // If primary failed and we haven't tried the fallback yet, try Qwen 2.5 VL
-            const fallbackModel = 'qwen/qwen2.5-vl-32b-instruct:free';
+            // If primary failed and we haven't tried the fallback yet, try Gemini Flash Lite
+            const fallbackModel = 'google/gemini-2.5-flash-lite';
             const currentModel = attachments?.length > 0
-                ? (this.multimodalModel || 'qwen/qwen2.5-vl-32b-instruct:free')
+                ? (this.multimodalModel || 'google/gemini-2.5-flash-lite')
                 : (this.openRouterModel || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free');
 
             if (currentModel !== fallbackModel) {
