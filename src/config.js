@@ -16,7 +16,7 @@ window.APP_CONFIG = {
 
     // 3. OpenRouter API (Fallback)
     // Used if Gemini API Key is missing.
-    OPENROUTER_API_KEY: "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",
+    OPENROUTER_API_KEY: "",
     OPENROUTER_MODEL: "arcee-ai/trinity-large-preview:free"
 };
 

@@ -50,12 +50,16 @@ You can set up a GitHub Action to automatically deploy the app and inject your A
             uses: actions/deploy-pages@v1
     ```
 
-2.  **Set API Key Secret**:
+3.  **Set API Key Secrets**:
     -   Go to your GitHub Repository -> **Settings** -> **Secrets and variables** -> **Actions**.
     -   Click **New repository secret**.
     -   Name: `GEMINI_API_KEY`.
-    -   Value: Your Gemini API Key (starts with `AIza...`).
+    -   Value: Your Gemini API Key.
+    -   Click **New repository secret** again.
+    -   Name: `OPENROUTER_API_KEY`.
+    -   Value: `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` (or your preferred key).
 
+4.  **Push**: Commit and push the `.github/workflows/deploy.yml` file. GitHub will automatically deploy your site.
 3.  **Push**: Commit and push the `.github/workflows/deploy.yml` file. GitHub will automatically deploy your site.
 
 ### B. Manual Hosting
