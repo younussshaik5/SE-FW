@@ -12,7 +12,12 @@ window.APP_CONFIG = {
     // 2. Proxy Server URL
     // If you deploy the Node.js proxy to Vercel/Heroku, put the URL here.
     // Default: '' (Disabled in production unless injected)
-    PROXY_URL: ""
+    PROXY_URL: "",
+
+    // 3. OpenRouter API (Fallback)
+    // Used if Gemini API Key is missing.
+    OPENROUTER_API_KEY: "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",
+    OPENROUTER_MODEL: "arcee-ai/trinity-large-preview:free"
 };
 
 // Try to load from standard env vars if using a bundler (Vite/Webpack) - optional

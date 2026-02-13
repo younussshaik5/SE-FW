@@ -37,9 +37,18 @@ const Settings = {
 
 
                     <div class="form-group" style="margin-bottom:var(--space-4)">
-                        <label class="form-label">Gemini API Key (alternative)</label>
-                        <input id="setting-gemini-key" class="form-input" type="password" placeholder="Gemini API key (if not using OAuth)" value="${GeminiService.getApiKey?.() || localStorage.getItem('gemini_api_key') || ''}" />
-                        <small style="color:var(--text-tertiary);font-size:var(--font-xs);margin-top:var(--space-1);display:block;">Direct API key — used when OAuth is not configured</small>
+                        <label class="form-label">Gemini API Key</label>
+                        <input id="setting-gemini-key" class="form-input" type="password" placeholder="Gemini API key" value="${GeminiService.apiKey || ''}" />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:var(--space-4); border-top: 1px solid var(--border-subtle); padding-top: var(--space-4);">
+                        <label class="form-label">OpenRouter API Key (Free Fallback)</label>
+                        <input id="setting-openrouter-key" class="form-input" type="password" placeholder="OpenRouter API key" value="${GeminiService.openRouterKey || ''}" />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:var(--space-4)">
+                        <label class="form-label">OpenRouter Model</label>
+                        <input id="setting-openrouter-model" class="form-input" placeholder="e.g., arcee-ai/trinity-large-preview:free" value="${GeminiService.openRouterModel || 'arcee-ai/trinity-large-preview:free'}" />
                     </div>
 
                     <div style="display:flex;gap:var(--space-3)">
@@ -114,12 +123,13 @@ const Settings = {
     init() { },
 
     saveAI() {
-        const apiKey = document.getElementById('setting-gemini-key').value;
+        const geminiKey = document.getElementById('setting-gemini-key').value;
+        const orKey = document.getElementById('setting-openrouter-key').value;
+        const orModel = document.getElementById('setting-openrouter-model').value;
 
-        if (apiKey) {
-            localStorage.setItem('gemini_api_key', apiKey);
-            GeminiService.setApiKey?.(apiKey);
-        }
+        if (geminiKey) GeminiService.setApiKey?.(geminiKey);
+        if (orKey) GeminiService.setOpenRouterKey?.(orKey);
+        if (orModel) GeminiService.setOpenRouterModel?.(orModel);
 
         window.App.showToast('AI configuration saved!', 'success');
         window.App.updateAuthState?.();
