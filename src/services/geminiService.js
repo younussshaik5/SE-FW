@@ -11,9 +11,9 @@ const GeminiService = {
     init() {
         this.openRouterKey = localStorage.getItem('openrouter_api_key') || window.APP_CONFIG?.OPENROUTER_API_KEY || null;
         this.openRouterModel = localStorage.getItem('openrouter_model') || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free';
-        this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'google/gemma-3-27b-it:free';
-        this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'nvidia/nemotron-nano-12b-v2-vl:free';
-        this.tertiaryMultimodalModel = localStorage.getItem('openrouter_multimodal_tertiary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || 'qwen/qwen3-vl-30b-a3b-instruct';
+        this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'nvidia/nemotron-nano-12b-v2-vl:free';
+        this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'qwen/qwen3-vl-30b-a3b-instruct';
+        this.tertiaryMultimodalModel = localStorage.getItem('openrouter_multimodal_tertiary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || 'google/gemma-3-27b-it:free';
         this.googleAIKey = localStorage.getItem('google_ai_key') || window.APP_CONFIG?.GOOGLE_AI_KEY || null;
     },
 
@@ -129,7 +129,8 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
                     provider: {
                         pdf_engine: 'pdf-text'
                     }
-                })
+                }),
+                signal: AbortSignal.timeout(60000) // 60s timeout
             });
 
             if (!response.ok) {
@@ -170,7 +171,8 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents })
+                body: JSON.stringify({ contents }),
+                signal: AbortSignal.timeout(60000) // 60s timeout
             });
 
             if (!response.ok) {
@@ -183,30 +185,38 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             return { success: true, text, source: 'google-ai-studio', model };
         };
 
-        const initialModel = this.openRouterModel || 'google/gemma-3-27b-it:free';
+        const primaryModel = this.openRouterModel || 'google/gemma-3-27b-it:free';
+        const multimodal1 = this.multimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free';
+        const multimodal2 = this.secondaryMultimodalModel || 'qwen/qwen3-vl-30b-a3b-instruct';
 
-        // Create a list of models to try in order (Gemma -> Nvidia -> Qwen -> Google)
+        // Create a list of models to try in EXACT ORDER requested by user:
+        // 1. Gemma (Text Primary)
+        // 2. Nvidia (Multimodal Primary)
+        // 3. Qwen (Multimodal Secondary)
+        // 4. Native Google (Expert Fallback)
         const retryChain = [
-            { id: initialModel, provider: 'openrouter' }
+            { id: primaryModel, provider: 'openrouter' },
+            { id: multimodal1, provider: 'openrouter' },
+            { id: multimodal2, provider: 'openrouter' },
+            { id: 'gemini-3-flash-preview', provider: 'google' }
         ];
 
-        // Always include fallbacks to ensure robustness for both text and multimodal
-        const fallbacks = [
-            { id: this.multimodalModel || 'google/gemma-3-27b-it:free', provider: 'openrouter' },
-            { id: this.secondaryMultimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free', provider: 'openrouter' },
-            { id: this.tertiaryMultimodalModel || 'qwen/qwen3-vl-30b-a3b-instruct', provider: 'openrouter' },
-            { id: 'gemini-3-flash-preview', provider: 'google' } // Final Native Fallback
-        ];
-
-        fallbacks.forEach(fm => {
-            if (!retryChain.find(m => m.id === fm.id)) retryChain.push(fm);
-        });
+        // Deduplicate in case any models are the same
+        const uniqueChain = [];
+        const seen = new Set();
+        for (const m of retryChain) {
+            if (!seen.has(m.id)) {
+                uniqueChain.push(m);
+                seen.add(m.id);
+            }
+        }
 
         let lastError = null;
-        for (const modelToTry of retryChain) {
+        console.log(`[AI] Starting generation with chain: ${uniqueChain.map(m => m.id).join(' -> ')}`);
+        for (const modelToTry of uniqueChain) {
             try {
-                if (modelToTry.id !== initialModel) {
-                    console.warn(`[AI] Primary failed. Attempting fallback to ${modelToTry.id} (${modelToTry.provider})...`);
+                if (modelToTry.id !== primaryModel) {
+                    console.warn(`[AI] Attempting fallback to ${modelToTry.id} (${modelToTry.provider})...`);
                 }
 
                 if (modelToTry.provider === 'google') {
@@ -222,7 +232,7 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
 
         return {
             success: false,
-            error: `All AI models failed. Attempts: ${retryChain.map(m => m.id).join(' -> ')}. Last error: ${lastError?.message}`
+            error: `All AI models failed. Attempts: ${uniqueChain.map(m => m.id).join(' -> ')}. Last error: ${lastError?.message}`
         };
     }
 };

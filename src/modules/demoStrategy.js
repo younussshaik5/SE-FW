@@ -209,10 +209,14 @@ e.g., 'Must show: omnichannel inbox consolidation (they have 4 tools), Freddy AI
         // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
+                const targetTab = e.currentTarget;
+                const tabId = targetTab.dataset.tab;
+                console.log(`[DemoStrategy] Switching to tab: ${tabId}`);
+
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                e.target.classList.add('active');
-                document.getElementById(`tab-${e.target.dataset.tab}`).classList.add('active');
+                targetTab.classList.add('active');
+                document.getElementById(`tab-${tabId}`).classList.add('active');
             });
         });
     },
@@ -384,6 +388,7 @@ Cross-check ALL facts with internet sources. Cite sources where possible (e.g., 
         const audience = document.getElementById('build-audience').value;
         const fileInput = document.getElementById('build-file');
         const resultEl = document.getElementById('build-result');
+        console.log('[DemoStrategy] Starting Build Generation...');
 
         if (!input.trim() && (!fileInput.files || fileInput.files.length === 0)) {
             window.App.showToast('Describe pains & use cases to demo, or attach discovery report', 'warning');

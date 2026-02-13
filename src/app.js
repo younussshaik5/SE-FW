@@ -225,8 +225,9 @@ const App = {
 
         const sources = {
             'chrome-nano': '✨ Chrome Built-in AI',
-            'gemini-api': '💎 Google Gemini API',
-            'openrouter': '🌐 OpenRouter API'
+            'google-ai-studio': '💎 Google Gemini API',
+            'openrouter': '🌐 OpenRouter API',
+            'gemini-3-flash-preview': '⚡ Gemini 1.5 Flash (Preview)'
         };
 
         const label = sources[result.source] || 'Unknown AI';
