@@ -153,14 +153,14 @@ const App = {
 
         if (demoIndicator) {
             if (isLive) {
-                demoIndicator.innerHTML = '<span class="demo-dot" style="background:var(--success)"></span><span class="demo-text">Live Mode</span>';
+                demoIndicator.innerHTML = '<span class="demo-dot" style="background:var(--success)"></span><span class="demo-text">AI Ready</span>';
             } else {
-                demoIndicator.innerHTML = '<span class="demo-dot"></span><span class="demo-text">Demo Mode</span>';
+                demoIndicator.innerHTML = '<span class="demo-dot" style="background:var(--danger)"></span><span class="demo-text">AI Unconfigured</span>';
             }
         }
 
         if (demoBanner) {
-            demoBanner.style.display = isLive ? 'none' : 'flex';
+            demoBanner.style.display = 'none'; // Always hide the demo banner
         }
     },
 
@@ -222,9 +222,6 @@ const App = {
     // ---- UI Helpers ----
     getAiBadge(result) {
         if (!result) return '';
-        if (result.demo) {
-            return `<div class="ai-badge demo-badge">🏠 Local Demo Data</div>`;
-        }
 
         const sources = {
             'chrome-nano': '✨ Chrome Built-in AI',

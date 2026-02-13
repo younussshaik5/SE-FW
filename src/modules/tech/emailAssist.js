@@ -3,7 +3,6 @@
 // ========================================
 
 import GeminiService from '../../services/geminiService.js';
-import DemoResponses from '../../data/demoResponses.js';
 
 const EmailAssist = {
     render() {
@@ -96,8 +95,21 @@ Requirements:
             attachments
         );
 
-        const content = (result.demo || !result.success) ? (DemoResponses.techUtilities?.email || "Demo Response") : result.text;
-        resultEl.innerHTML = window.MarkdownRenderer.parse(content);
+        const badge = window.App.getAiBadge(result);
+
+        if (result.success) {
+            resultEl.innerHTML = `
+                <div class="result-body">${window.MarkdownRenderer.parse(result.text)}</div>
+                <div class="result-meta" style="margin-top:var(--space-4); opacity:0.8;">${badge}</div>
+            `;
+        } else {
+            resultEl.innerHTML = `
+                <div class="error-container" style="padding:var(--space-4); background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.2);">
+                    <div style="color:#f87171; font-weight:600; margin-bottom:var(--space-2);">❌ AI Draft Failed</div>
+                    <div style="color:var(--text-secondary); font-size:var(--font-sm);">${result.error || 'Unknown error occurred'}</div>
+                </div>
+            `;
+        }
     },
 
     copy() {

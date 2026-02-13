@@ -39,7 +39,7 @@ const GeminiService = {
     },
 
     isLiveMode() {
-        return !!(this.apiKey || this.oauthToken || window.ai || window.APP_CONFIG?.OPENROUTER_API_KEY);
+        return !!(this.apiKey || this.oauthToken || window.ai || this.openRouterKey || window.APP_CONFIG?.OPENROUTER_API_KEY);
     },
 
     async isChromeAiAvailable() {
@@ -70,7 +70,7 @@ const GeminiService = {
                 const result = await session.prompt(fullPrompt);
                 const text = typeof result === 'string' ? result : (result.response || '');
                 session.destroy();
-                return { success: true, demo: false, text, source: 'chrome-nano' };
+                return { success: true, text, source: 'chrome-nano' };
             } catch (nanoError) {
                 console.warn('Chrome AI failed:', nanoError);
             }
@@ -100,14 +100,14 @@ const GeminiService = {
 
                 const data = await response.json();
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                return { success: true, demo: false, text, source: 'gemini-api' };
+                return { success: true, text, source: 'gemini-api' };
             } catch (geminiError) {
                 console.error('Gemini API Error:', geminiError);
-                // Fallthrough to OpenRouter if configured
+                // Fallthrough to OpenRouter
             }
         }
 
-        // 3. Try OpenRouter (Fallback)
+        // 3. Try OpenRouter
         const openRouterKey = this.openRouterKey || window.APP_CONFIG?.OPENROUTER_API_KEY;
         if (openRouterKey) {
             try {
@@ -116,8 +116,6 @@ const GeminiService = {
                 const messages = [];
                 if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
                 messages.push({ role: 'user', content: typeof prompt === 'string' ? prompt : JSON.stringify(prompt) });
-
-                // Attachments not fully supported on OpenRouter text-only models yet, skipping for now in fallback
 
                 const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
@@ -139,16 +137,19 @@ const GeminiService = {
 
                 const data = await response.json();
                 const text = data.choices?.[0]?.message?.content || '';
-                return { success: true, demo: false, text, source: 'openrouter' };
+                return { success: true, text, source: 'openrouter' };
 
             } catch (orError) {
                 console.error('OpenRouter Error:', orError);
-                return { success: false, demo: false, error: `OpenRouter Failed: ${orError.message}` };
+                return { success: false, error: `OpenRouter Failed: ${orError.message}` };
             }
         }
 
-        // 4. Fallback to Demo Mode
-        return { success: false, demo: true, message: 'No working AI provider found (Chrome AI, Gemini, or OpenRouter).' };
+        // 4. No Provider Configured
+        return {
+            success: false,
+            error: 'No AI Provider Configured. Please add an OpenRouter or Gemini API key in Settings, or enable Chrome Built-in AI.'
+        };
     }
 };
 

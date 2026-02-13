@@ -3,7 +3,6 @@
 // ========================================
 
 import GeminiService from '../services/geminiService.js';
-import DemoResponses from '../data/demoResponses.js';
 
 const DemoStrategy = {
     render() {
@@ -218,11 +217,6 @@ Example: 'Omnichannel inbox, Freddy AI, SLA tracking, Knowledge base, Automation
                 <div class="result-body">${result.text}</div>
                 <div class="result-meta">${badge}</div>
             `;
-        } else if (result.demo) {
-            resultEl.innerHTML = `
-                <div class="result-body">${DemoResponses.demoStrategy.discovery}</div>
-                <div class="result-meta">${badge}</div>
-            `;
         } else {
             resultEl.innerHTML = `
                 <div class="error-container" style="padding:var(--space-4); background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.2);">
@@ -266,11 +260,6 @@ Example: 'Omnichannel inbox, Freddy AI, SLA tracking, Knowledge base, Automation
                 <div class="result-body">${result.text}</div>
                 <div class="result-meta">${badge}</div>
             `;
-        } else if (result.demo) {
-            resultEl.innerHTML = `
-                <div class="result-body">${DemoResponses.demoStrategy.build}</div>
-                <div class="result-meta">${badge}</div>
-            `;
         } else {
             resultEl.innerHTML = `
                 <div class="error-container" style="padding:var(--space-4); background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.2);">
@@ -308,11 +297,6 @@ Example: 'Omnichannel inbox, Freddy AI, SLA tracking, Knowledge base, Automation
         if (result.success) {
             resultEl.innerHTML = `
                 <div class="result-body">${result.text}</div>
-                <div class="result-meta">${badge}</div>
-            `;
-        } else if (result.demo) {
-            resultEl.innerHTML = `
-                <div class="result-body">${DemoResponses.demoStrategy.script}</div>
                 <div class="result-meta">${badge}</div>
             `;
         } else {

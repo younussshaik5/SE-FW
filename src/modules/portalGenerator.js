@@ -3,7 +3,6 @@
 // ========================================
 
 import GeminiService from '../services/geminiService.js';
-import DemoResponses from '../data/demoResponses.js';
 
 const PortalGenerator = {
     messages: [],
@@ -57,11 +56,7 @@ const PortalGenerator = {
     init() {
         this.messages = [];
         this.attachments = [];
-        if (!GeminiService.isLiveMode()) {
-            this.messages = DemoResponses.portalGenerator.map(m => ({ ...m }));
-        } else {
-            this.messages = [{ role: 'ai', text: "🌐 Welcome to the Portal Generator! I'll help you create a branded customer support portal.\n\n**What's the company name and their primary brand color?**" }];
-        }
+        this.messages = [{ role: 'ai', text: "🌐 Welcome to the Portal Generator! I'll help you create a branded customer support portal.\n\n**What's the company name and their primary brand color?**" }];
         this.renderMessages();
     },
 
@@ -72,7 +67,10 @@ const PortalGenerator = {
         container.innerHTML = this.messages.map(msg => `
             <div class="chat-message ${msg.role === 'ai' ? 'ai' : 'user'}">
                 <div class="chat-avatar">${msg.role === 'ai' ? '🤖' : '👤'}</div>
-                <div class="chat-bubble">${msg.text}</div>
+                <div class="chat-bubble">
+                    ${msg.text}
+                    ${msg.badge ? `<div class="result-meta" style="margin-top:var(--space-2); opacity:0.7;">${msg.badge}</div>` : ''}
+                </div>
             </div>
         `).join('');
 
@@ -112,57 +110,23 @@ const PortalGenerator = {
         document.getElementById('pg-loading')?.remove();
 
         let aiText;
-        if (result.demo || !result.success) {
-            aiText = "I've gathered your requirements! In live mode, I'll generate the complete HTML/CSS portal with your branding. Connect your Gemini API to enable live portal generation.\n\n*Here's a preview of what the generated portal will look like.*";
-            // Show a sample portal preview
-            this.showSamplePreview();
-        } else {
+        if (result.success) {
             aiText = result.text;
+            const badge = window.App.getAiBadge(result);
+            this.messages[this.messages.length - 1].badge = badge;
+
             // Try to extract HTML from the response
             const htmlMatch = result.text.match(/```html\n([\s\S]*?)\n```/);
             if (htmlMatch) {
                 this.portalHTML = htmlMatch[1];
                 this.renderPreview(this.portalHTML);
             }
+        } else {
+            aiText = `❌ AI Generation Failed: ${result.error || 'Unknown error'}. Please check your configuration.`;
         }
 
         this.messages.push({ role: 'ai', text: aiText });
         this.renderMessages();
-    },
-
-    showSamplePreview() {
-        const sampleHTML = `<!DOCTYPE html>
-<html><head><style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
-body{background:#f8fafc}
-.header{background:linear-gradient(135deg,#2563EB,#1d4ed8);color:white;padding:3rem 2rem;text-align:center}
-.header h1{font-size:1.8rem;margin-bottom:0.5rem}
-.header p{opacity:0.9;font-size:0.95rem}
-.search{max-width:500px;margin:1.5rem auto 0;position:relative}
-.search input{width:100%;padding:0.8rem 1.2rem;border:none;border-radius:8px;font-size:1rem}
-.categories{max-width:900px;margin:2rem auto;padding:0 1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem}
-.cat-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s}
-.cat-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.1);transform:translateY(-2px)}
-.cat-icon{font-size:2rem;margin-bottom:0.5rem}
-.cat-title{font-weight:600;color:#1e293b;margin-bottom:0.25rem}
-.cat-count{font-size:0.8rem;color:#64748b}
-.footer{text-align:center;padding:2rem;color:#94a3b8;font-size:0.8rem;border-top:1px solid #e2e8f0;margin-top:2rem}
-</style></head><body>
-<div class="header">
-    <h1>NovaPay Help Center</h1>
-    <p>How can we help you today?</p>
-    <div class="search"><input type="text" placeholder="Search for articles..." /></div>
-</div>
-<div class="categories">
-    <div class="cat-card"><div class="cat-icon">💳</div><div class="cat-title">Payments</div><div class="cat-count">24 articles</div></div>
-    <div class="cat-card"><div class="cat-icon">🔒</div><div class="cat-title">Account & Security</div><div class="cat-count">18 articles</div></div>
-    <div class="cat-card"><div class="cat-icon">💰</div><div class="cat-title">Billing</div><div class="cat-count">12 articles</div></div>
-    <div class="cat-card"><div class="cat-icon">🔗</div><div class="cat-title">API & Integrations</div><div class="cat-count">31 articles</div></div>
-</div>
-<div class="footer">© 2026 NovaPay. All rights reserved. | <a href="#" style="color:#2563EB;">Contact Support</a></div>
-</body></html>`;
-        this.portalHTML = sampleHTML;
-        this.renderPreview(sampleHTML);
     },
 
     renderPreview(html) {

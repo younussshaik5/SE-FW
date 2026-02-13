@@ -3,7 +3,6 @@
 // ========================================
 
 import GeminiService from '../services/geminiService.js';
-import DemoResponses from '../data/demoResponses.js';
 
 const VoiceBotConfig = {
     render() {
@@ -112,7 +111,21 @@ Include:
 
         const result = await GeminiService.generateContent(prompt, 'You are a Freshcaller IVR architect.');
 
-        resultEl.innerHTML = (result.demo || !result.success) ? DemoResponses.voiceBotConfig : result.text;
+        const badge = window.App.getAiBadge(result);
+
+        if (result.success) {
+            resultEl.innerHTML = `
+                <div class="result-body">${result.text}</div>
+                <div class="result-meta">${badge}</div>
+            `;
+        } else {
+            resultEl.innerHTML = `
+                <div class="error-container" style="padding:var(--space-4); background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.2);">
+                    <div style="color:#f87171; font-weight:600; margin-bottom:var(--space-2);">❌ AI Generation Failed</div>
+                    <div style="color:var(--text-secondary); font-size:var(--font-sm);">${result.error || 'Unknown error occurred'}</div>
+                </div>
+            `;
+        }
     },
 
     copy() {

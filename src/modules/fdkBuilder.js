@@ -4,7 +4,6 @@
 
 import GeminiService from '../services/geminiService.js';
 import FdkKnowledge from '../data/fdkKnowledge.js';
-import DemoResponses from '../data/demoResponses.js';
 
 const FdkBuilder = {
     state: {
@@ -161,31 +160,23 @@ const FdkBuilder = {
         const prompt = FdkKnowledge.prompts.analyzeParams + desc;
         const result = await GeminiService.generateContent(prompt, "You are a Senior FDK Architect. Output valid JSON only.", []);
 
-        if (result.success && !result.demo) {
+        if (result.success) {
             try {
                 const jsonStr = result.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
                 this.state.analysis = JSON.parse(jsonStr);
+                this.addLog(`AI Analysis complete via ${result.source}`);
             } catch (e) {
                 console.error("JSON Parse Error", e);
-                // Fallback analysis
-                this.state.analysis = {
-                    product: "freshdesk",
-                    locations: ["ticket_sidebar"],
-                    features: ["unknown"],
-                    reasoning: "Could not parse detailed analysis. defaulting to basic structure."
-                };
+                this.addLog('❌ AI returned invalid JSON analysis. Please refine your description.');
+                this.state.step = 0;
+                this.updateUI();
+                return;
             }
         } else {
-            // Demo Mode Fallback
-            this.state.analysis = {
-                product: "freshdesk",
-                locations: ["ticket_sidebar", "serverless_app"],
-                features: ["serverless_events", "external_api"],
-                events: ["onTicketCreate"],
-                apis: ["https://api.crm.com"],
-                complexity: "medium",
-                reasoning: "Based on the request for a ticket creation listener, this app requires a Serverless component (server.js) to handle the 'onTicketCreate' event. It will also need a frontend for config/logs."
-            };
+            this.addLog(`❌ AI Analysis Failed: ${result.error || 'Unknown error'}`);
+            this.state.step = 0;
+            this.updateUI();
+            return;
         }
 
         this.updateUI();

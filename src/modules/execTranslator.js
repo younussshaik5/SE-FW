@@ -3,7 +3,6 @@
 // ========================================
 
 import GeminiService from '../services/geminiService.js';
-import DemoResponses from '../data/demoResponses.js';
 
 const ExecTranslator = {
     render() {
@@ -109,18 +108,31 @@ Frame for ${persona}'s priorities:
 
             const result = await GeminiService.generateContent(prompt, 'You are an expert at translating technical capabilities into executive-level strategic value.', attachments);
 
+            const badge = window.App.getAiBadge(result);
             const cards = resultsEl.querySelectorAll('.glass-card');
             const card = cards[i];
+
             if (card) {
-                const demoText = DemoResponses.execTranslator[persona] || DemoResponses.execTranslator['CIO'];
-                const content = (result.demo || !result.success) ? demoText : result.text;
-                card.innerHTML = `
-                    <div class="result-header">
-                        <h2>${persona === 'CIO' ? '🖥️' : persona === 'CFO' ? '💰' : persona === 'CEO' ? '👔' : '⚙️'} ${persona} Translation</h2>
-                        <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText(this.closest('.glass-card').querySelector('.result-content').innerText).then(()=>window.App.showToast('Copied!','success'))">📋 Copy</button>
-                    </div>
-                    <div class="result-content">${window.MarkdownRenderer ? window.MarkdownRenderer.parse(content) : content}</div>
-                `;
+                if (result.success) {
+                    card.innerHTML = `
+                        <div class="result-header">
+                            <h2>${persona === 'CIO' ? '🖥️' : persona === 'CFO' ? '💰' : persona === 'CEO' ? '👔' : '⚙️'} ${persona} Translation</h2>
+                            <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText(this.closest('.glass-card').querySelector('.result-content').innerText).then(()=>window.App.showToast('Copied!','success'))">📋 Copy</button>
+                        </div>
+                        <div class="result-content">${window.MarkdownRenderer ? window.MarkdownRenderer.parse(result.text) : result.text}</div>
+                        <div class="result-meta" style="margin-top:var(--space-4); opacity:0.8;">${badge}</div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="result-header">
+                             <h2>${persona === 'CIO' ? '🖥️' : persona === 'CFO' ? '💰' : persona === 'CEO' ? '👔' : '⚙️'} ${persona} Translation</h2>
+                        </div>
+                        <div class="error-container" style="padding:var(--space-4); background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.2);">
+                            <div style="color:#f87171; font-weight:600; margin-bottom:var(--space-2);">❌ AI Translation Failed</div>
+                            <div style="color:var(--text-secondary); font-size:var(--font-sm);">${result.error || 'Unknown error occurred'}</div>
+                        </div>
+                    `;
+                }
             }
         }
     }

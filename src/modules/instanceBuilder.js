@@ -4,7 +4,6 @@
 
 import GeminiService from '../services/geminiService.js';
 import FreshworksService from '../services/freshworksService.js';
-import DemoResponses from '../data/demoResponses.js';
 
 const InstanceBuilder = {
     messages: [],
@@ -37,13 +36,8 @@ const InstanceBuilder = {
     init() {
         this.messages = [];
         this.attachments = [];
-        // Load demo conversation or start fresh
-        if (!GeminiService.isLiveMode()) {
-            const demoMessages = DemoResponses.instanceBuilder;
-            this.messages = demoMessages.map(m => ({ ...m }));
-        } else {
-            this.messages = [{ role: 'ai', text: "👋 Welcome to the Instance Builder! I'll help you configure a complete Freshworks instance. Let's start — **which Freshworks product** are you setting up?\n\n- Freshdesk (Customer Support)\n- Freshservice (IT Service Management)\n- Freshsales (CRM)\n- Freshchat (Messaging)" }];
-        }
+        // Start fresh conversation
+        this.messages = [{ role: 'ai', text: "👋 Welcome to the Instance Builder! I'll help you configure a complete Freshworks instance. Let's start — **which Freshworks product** are you setting up?\n\n- Freshdesk (Customer Support)\n- Freshservice (IT Service Management)\n- Freshsales (CRM)\n- Freshchat (Messaging)" }];
         this.renderMessages();
     },
 
@@ -54,7 +48,10 @@ const InstanceBuilder = {
         container.innerHTML = this.messages.map(msg => `
             <div class="chat-message ${msg.role === 'ai' ? 'ai' : 'user'}">
                 <div class="chat-avatar">${msg.role === 'ai' ? '🤖' : '👤'}</div>
-                <div class="chat-bubble">${msg.role === 'ai' ? window.MarkdownRenderer.parse(msg.text) : msg.text}</div>
+                <div class="chat-bubble">
+                ${msg.role === 'ai' ? window.MarkdownRenderer.parse(msg.text) : msg.text}
+                ${msg.badge ? `<div class="result-meta" style="margin-top:var(--space-2); opacity:0.7;">${msg.badge}</div>` : ''}
+            </div>
             </div>
         `).join('');
 
@@ -103,11 +100,15 @@ Be conversational, use emojis, and be thorough about gathering requirements.`,
 
         document.getElementById('ib-loading')?.remove();
 
-        const aiText = (result.demo || !result.success)
-            ? "I'd love to help configure that! In live mode, I'll ask detailed questions about your setup needs and generate the full configuration. For now, you can see the sample conversation flow.\n\n*Connect your Gemini API to enable live configuration.*"
-            : result.text;
+        const aiText = result.success
+            ? result.text
+            : `❌ AI Generation Failed: ${result.error || 'Unknown error'}. Please check your API configuration.`;
 
         this.messages.push({ role: 'ai', text: aiText });
+        if (result.success) {
+            const badge = window.App.getAiBadge(result);
+            this.messages[this.messages.length - 1].badge = badge;
+        }
         this.renderMessages();
     },
 
