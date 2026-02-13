@@ -195,7 +195,7 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
         if (hasAttachments) {
             const fallbacks = [
                 { id: this.multimodalModel || 'openai/gpt-5-nano', provider: 'openrouter' },
-                { id: 'gemini-1.5-flash', provider: 'google' }, // Stable Native Fallback
+                { id: 'gemini-2.0-flash', provider: 'google' }, // Verified Native Fallback
                 { id: this.secondaryMultimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free', provider: 'openrouter' },
                 { id: this.tertiaryMultimodalModel || 'qwen/qwen3-vl-30b-a3b-instruct', provider: 'openrouter' }
             ];
