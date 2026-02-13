@@ -11,8 +11,8 @@ window.APP_CONFIG = {
 
     // 2. Proxy Server URL
     // If you deploy the Node.js proxy to Vercel/Heroku, put the URL here.
-    // Default: 'http://localhost:3000/api/proxy' (Local Node Server)
-    PROXY_URL: "http://localhost:3000/api/proxy"
+    // Default: '' (Disabled in production unless injected)
+    PROXY_URL: ""
 };
 
 // Try to load from standard env vars if using a bundler (Vite/Webpack) - optional
