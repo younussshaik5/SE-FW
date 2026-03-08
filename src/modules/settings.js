@@ -4,13 +4,11 @@
 
 import AuthService from '../services/authService.js';
 import FreshworksService from '../services/freshworksService.js';
-import SlackService from '../services/slackService.js';
 import GeminiService from '../services/geminiService.js';
 
 const Settings = {
     render() {
         const fwConnected = FreshworksService.isConnected();
-        const slackConnected = SlackService.isConfigured();
         const aiMode = GeminiService.isLiveMode() ? 'live' : 'demo';
 
         return `
@@ -42,7 +40,7 @@ const Settings = {
 
                     <div class="form-group" style="margin-bottom:var(--space-4)">
                         <label class="form-label">OpenRouter Model</label>
-                        <input id="setting-openrouter-model" class="form-input" placeholder="e.g., arcee-ai/trinity-large-preview:free" value="${GeminiService.openRouterModel || 'arcee-ai/trinity-large-preview:free'}" />
+                        <input id="setting-openrouter-model" class="form-input" placeholder="e.g., nvidia/nemotron-nano-12b-v2-vl:free" value="${GeminiService.openRouterModel || 'nvidia/nemotron-nano-12b-v2-vl:free'}" />
                     </div>
 
                     <div style="display:flex;gap:var(--space-3)">
@@ -78,32 +76,6 @@ const Settings = {
                     <div style="display:flex;gap:var(--space-3)">
                         <button class="btn btn-primary" onclick="Settings.saveFreshworks()">💾 Save</button>
                         <button class="btn btn-secondary" onclick="Settings.testFreshworks()">🧪 Test</button>
-                    </div>
-                </div>
-
-                <!-- Slack -->
-                <div class="glass-card module-panel">
-                    <h2>💬 Slack Integration</h2>
-                    <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);padding:var(--space-3);background:${slackConnected ? 'rgba(16,185,129,0.1)' : 'rgba(107,114,128,0.1)'};border-radius:var(--radius-md);">
-                        <span style="font-size:1.5rem">${slackConnected ? '🟢' : '🔴'}</span>
-                        <div>
-                            <div style="font-weight:600;color:var(--text-primary);">${slackConnected ? 'Connected' : 'Not Connected'}</div>
-                            <div style="font-size:var(--font-sm);color:var(--text-secondary);">
-                                ${slackConnected ? 'Webhook configured' : 'Add a webhook URL to enable Slack sharing'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:var(--space-4)">
-                        <label class="form-label">Slack Webhook URL</label>
-                        <input id="setting-slack-url" class="form-input" type="url" placeholder="https://hooks.slack.com/services/..." value="${SlackService.getWebhookUrl?.() || localStorage.getItem('slack_webhook') || ''}" />
-                        <small style="color:var(--text-tertiary);font-size:var(--font-xs);margin-top:var(--space-1);display:block;">
-                            Create at: api.slack.com/incoming-webhooks
-                        </small>
-                    </div>
-                    <div style="display:flex;gap:var(--space-3)">
-                        <button class="btn btn-primary" onclick="Settings.saveSlack()">💾 Save</button>
-                        <button class="btn btn-secondary" onclick="Settings.testSlack()">🧪 Test</button>
                     </div>
                 </div>
 
@@ -160,27 +132,6 @@ const Settings = {
         }
     },
 
-    saveSlack() {
-        const url = document.getElementById('setting-slack-url').value;
-        localStorage.setItem('slack_webhook', url);
-        SlackService.setWebhookUrl(url);
-        window.App.showToast('Slack webhook saved!', 'success');
-    },
-
-    async testSlack() {
-        const url = localStorage.getItem('slack_webhook');
-        if (!url) {
-            window.App.showToast('Configure webhook first', 'warning');
-            return;
-        }
-        window.App.showToast('Sending test message to Slack...', 'info');
-        const result = await SlackService.sendMessage('🧪 Test message from SE Workstation!');
-        if (result) {
-            window.App.showToast('✅ Slack message sent!', 'success');
-        } else {
-            window.App.showToast('❌ Check webhook URL', 'danger');
-        }
-    },
 
     saveAppSettings() {
         localStorage.setItem('autosave', document.getElementById('setting-autosave').checked);

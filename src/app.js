@@ -5,7 +5,6 @@
 import GeminiService from './services/geminiService.js';
 import FreshworksService from './services/freshworksService.js';
 import AuthService from './services/authService.js';
-import SlackService from './services/slackService.js';
 
 // Module imports
 import DemoStrategy from './modules/demoStrategy.js';
@@ -129,14 +128,9 @@ const App = {
             FreshworksService.setCredentials(fwDomain, fwApiKey);
         }
 
-        const slackWebhook = localStorage.getItem('slack_webhook');
-        if (slackWebhook) {
-            SlackService.setWebhookUrl(slackWebhook);
-        }
-
-        const geminiKey = localStorage.getItem('gemini_api_key');
-        if (geminiKey && GeminiService.setApiKey) {
-            GeminiService.setApiKey(geminiKey);
+        const geminiKey = localStorage.getItem('openrouter_api_key') || window.APP_CONFIG?.OPENROUTER_API_KEY || window.ENV?.OPENROUTER_API_KEY;
+        if (geminiKey && GeminiService.setOpenRouterKey) {
+            GeminiService.setOpenRouterKey(geminiKey);
         }
 
         const oauthClient = localStorage.getItem('google_client_id');
@@ -148,19 +142,18 @@ const App = {
     // ---- Auth State ----
     updateAuthState() {
         const isLive = GeminiService.isLiveMode();
-        const demoIndicator = document.getElementById('demo-mode-indicator');
-        const demoBanner = document.getElementById('demo-banner');
+        const aiIndicator = document.getElementById('ai-status-indicator');
 
-        if (demoIndicator) {
+        if (aiIndicator) {
             if (isLive) {
-                demoIndicator.innerHTML = '<span class="demo-dot" style="background:var(--success)"></span><span class="demo-text">AI Ready</span>';
+                aiIndicator.innerHTML = '<span class="demo-dot" style="background:var(--success)"></span><span class="demo-text">AI Ready (Live)</span>';
+                aiIndicator.style.background = 'rgba(16,185,129,0.1)';
+                aiIndicator.style.border = '1px solid rgba(16,185,129,0.3)';
             } else {
-                demoIndicator.innerHTML = '<span class="demo-dot" style="background:var(--danger)"></span><span class="demo-text">AI Unconfigured</span>';
+                aiIndicator.innerHTML = '<span class="demo-dot" style="background:var(--danger)"></span><span class="demo-text">AI Offline</span>';
+                aiIndicator.style.background = 'rgba(239,68,68,0.1)';
+                aiIndicator.style.border = '1px solid rgba(239,68,68,0.3)';
             }
-        }
-
-        if (demoBanner) {
-            demoBanner.style.display = 'none'; // Always hide the demo banner
         }
     },
 

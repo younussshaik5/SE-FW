@@ -286,24 +286,127 @@ ${history}
         const history = this.state.messages.map(m => `${m.role === 'ai' ? 'Assistant' : 'User'}: ${m.text}`).join('\n\n');
 
         const result = await GeminiService.generateContent(
-            `Generate a **Technical Blueprint** for this app.
+            `Generate a **Comprehensive Technical Blueprint** for this FDK app with 10-30 detailed points per section.
             
 Conversation:
 ${history}
 
-**OUTPUT FORMAT (Markdown):**
-1. **App Profile**: Name, Product, Platform Version (3.0).
-2. **Architecture**:
-   - **Frontend**: Locations (e.g., ticket_sidebar), UI Components needed.
-   - **Backend (Serverless)**: Events (e.g., onTicketCreate), SMI functions.
-3. **Features**: List (e.g., Data Storage, OAuth, SMI).
-4. **Integration Strategy**:
-   - **Auth**: (e.g., iparam-based API Key or OAuth2).
-   - **APIs**: List exact endpoints and methods.
-5. **Security**: Whitelisted domains.
+**REQUIRED OUTPUT STRUCTURE WITH 10-30 DETAILED POINTS:**
 
-**CRITICAL:** Ensure the blueprint is detailed enough for the code generator to build valid FDK v3.0 code.`,
-            'You are a Senior FDK Architect.'
+## Executive Summary (10-15 points)
+- **App Name:** (with rationale)
+- **Target Product:** (Freshdesk/Freshservice/etc.)
+- **Platform Version:** 3.0
+- **Business Value:** (3-5 points)
+- **Key Features:** (5-7 points)
+- **Implementation Complexity:** (Low/Medium/High with rationale)
+
+## App Profile (10-15 points)
+| Attribute | Value | Rationale | Notes |
+| --- | --- | --- | --- |
+| App Name | ... | ... | ... |
+| Product | ... | ... | ... |
+| Platform Version | 3.0 | ... | ... |
+| Node Version | 18.13.0 | ... | ... |
+| FDK Version | 9.7.0 | ... | ... |
+| App Type | ... | ... | ... |
+
+## Architecture Design (20-25 points)
+
+### Frontend Architecture (10-15 points)
+| Location | UI Component | Purpose | Data Flow | User Interaction |
+| --- | --- | --- | --- | --- |
+| ticket_sidebar | ... | ... | ... | ... |
+| ticket_details | ... | ... | ... | ... |
+| admin_panel | ... | ... | ... | ... |
+(5-7 frontend locations with detailed component design)
+
+### Backend Architecture (10-15 points)
+| Event/Function | Trigger | Handler | Data Processing | Output |
+| --- | --- | --- | --- | --- |
+| onTicketCreate | ... | ... | ... | ... |
+| onTicketUpdate | ... | ... | ... | ... |
+| smi_function | ... | ... | ... | ... |
+(5-7 backend events/functions with detailed processing logic)
+
+## Feature Specification (15-20 points)
+| Feature | Implementation | Purpose | Complexity | Dependencies |
+| --- | --- | --- | --- | --- |
+| Data Storage | ... | ... | ... | ... |
+| OAuth | ... | ... | ... | ... |
+| SMI | ... | ... | ... | ... |
+| Serverless Events | ... | ... | ... | ... |
+| Custom Objects | ... | ... | ... | ... |
+(5-7 features with detailed implementation plans)
+
+## Integration Strategy (20-25 points)
+
+### Authentication (10-15 points)
+| Method | Type | Implementation | Security | Use Case |
+| --- | --- | --- | --- | --- |
+| API Key | iparam | ... | ... | ... |
+| OAuth2 | manifest | ... | ... | ... |
+| JWT | ... | ... | ... | ... |
+(3-5 authentication methods with detailed implementation)
+
+### API Endpoints (10-15 points)
+| Service | Endpoint | Method | Purpose | Parameters | Response Format |
+| --- | --- | --- | --- | --- | --- |
+| Freshdesk | /api/v2/tickets | GET | ... | ... | ... |
+| Third Party | /api/v1/tasks | POST | ... | ... | ... |
+(5-7 API endpoints with detailed specifications)
+
+## Data Flow & Storage (10-15 points)
+| Data Type | Source | Destination | Format | Transformation | Retention |
+| --- | --- | --- | --- | --- | --- |
+| Ticket Data | Freshdesk | Third Party | JSON | ... | ... |
+| User Data | ... | ... | ... | ... | ... |
+(5-7 data flows with detailed specifications)
+
+## Security & Compliance (10-15 points)
+| Security Aspect | Implementation | Risk Mitigation | Best Practice | Validation |
+| --- | --- | --- | --- | --- |
+| Whitelisted Domains | ... | ... | ... | ... |
+| Data Encryption | ... | ... | ... | ... |
+| API Rate Limiting | ... | ... | ... | ... |
+| Input Validation | ... | ... | ... | ... |
+(5-7 security aspects with detailed implementation)
+
+## Error Handling & Logging (10-15 points)
+| Error Type | Detection | Handling Strategy | User Feedback | Logging |
+| --- | --- | --- | --- | --- |
+| API Failures | ... | ... | ... | ... |
+| Network Issues | ... | ... | ... | ... |
+| Data Validation | ... | ... | ... | ... |
+(3-5 error types with detailed handling)
+
+## Testing Strategy (10-15 points)
+| Test Type | Scope | Method | Success Criteria | Tools |
+| --- | --- | --- | --- | --- |
+| Unit Tests | ... | ... | ... | ... |
+| Integration Tests | ... | ... | ... | ... |
+| E2E Tests | ... | ... | ... | ... |
+(3-5 test types with detailed plans)
+
+## Deployment & Configuration (10-15 points)
+| Step | Action | Prerequisites | Validation | Rollback Plan |
+| --- | --- | --- | --- | --- |
+| Development | ... | ... | ... | ... |
+| Staging | ... | ... | ... | ... |
+| Production | ... | ... | ... | ... |
+(3-5 deployment steps with detailed plans)
+
+## Timeline & Milestones (10-15 points)
+| Phase | Duration | Deliverables | Dependencies | Risk Level |
+| --- | --- | --- | --- | --- |
+| Discovery | ... | ... | ... | ... |
+| Development | ... | ... | ... | ... |
+| Testing | ... | ... | ... | ... |
+| Deployment | ... | ... | ... | ... |
+(3-5 phases with detailed timelines)
+
+**CRITICAL:** Ensure the blueprint is detailed enough for the code generator to build valid FDK v3.0 code with 10-30 detailed points per section.`,
+            'You are a Senior FDK Architect. Generate comprehensive blueprints with detailed technical specifications.'
         );
 
         if (result.success) {
@@ -359,18 +462,106 @@ ${history}
         };
 
         const result = await GeminiService.generateContent(
-            `Generate file: **${fileType}**
+            `Generate FDK v3.0 File: **${fileType}** with Comprehensive Implementation Details
+
 Context:
 ${context || this.state.messages.map(m => m.text).join('\n')}
 
+**REQUIRED OUTPUT STRUCTURE WITH 10-30 DETAILED POINTS:**
+
+## File Overview (5-7 points)
+- **File Purpose:** (detailed explanation)
+- **Dependencies:** (list with versions)
+- **Key Functions/Components:** (3-5 points)
+- **Integration Points:** (2-3 points)
+- **Security Considerations:** (2-3 points)
+
+## Implementation Details (10-15 points)
+| Component | Functionality | Parameters | Return Value | Error Handling |
+| --- | --- | --- | --- | --- |
+(5-7 components with detailed specifications)
+
+## Code Structure (10-15 points)
+| Section | Purpose | Implementation | Best Practice | Notes |
+| --- | --- | --- | --- | --- |
+(5-7 sections with detailed structure)
+
+## Configuration Requirements (5-10 points)
+| Setting | Type | Default | Required | Validation |
+| --- | --- | --- | --- | --- |
+(3-5 configuration items)
+
+## API Integration (5-10 points)
+| Endpoint | Method | Purpose | Payload | Response |
+| --- | --- | --- | --- | --- |
+(3-5 endpoints with detailed specs)
+
+## Error Handling Strategy (5-10 points)
+| Error Type | Detection | Handling | User Message | Logging |
+| --- | --- | --- | --- | --- |
+(3-5 error types with detailed handling)
+
 **TECHNICAL RULES:**
-1. Output **ONLY** raw code. No markdown wrapper.
-2. FDK 3.0 Standards.
-3. If Serverless: Handler functions MUST use \`renderData(error, success)\`.
-4. If SMI: Functions MUST return via \`renderData\`.
-5. If OAuth: \`manifest.json\` MUST include \`"features": { "oauth": {} }\`.
-6. For icon.svg: RAW SVG text only.`,
-            'You are a precise code generator. RAW TEXT only.'
+1. Generate **comprehensive, production-ready code** with detailed comments
+2. FDK 3.0 Standards: platform-version "3.0", Node "18.13.0", FDK "9.7.0"
+3. If Serverless: Handler functions MUST use \`renderData(error, success)\`
+4. If SMI: Functions MUST return via \`renderData\`
+5. If OAuth: \`manifest.json\` MUST include \`"features": { "oauth": {} }\`
+6. For icon.svg: RAW SVG text only (64x64)
+7. Include detailed inline comments explaining each section
+8. Use ES6+ syntax with modern patterns
+9. Implement proper error handling and logging
+10. Include security best practices
+
+**FILE-SPECIFIC REQUIREMENTS:**
+
+For manifest.json:
+- Platform version: "3.0"
+- Node version: "18.13.0"
+- FDK version: "9.7.0"
+- Whitelist all required domains
+- Include all necessary features (oauth, data_storage, etc.)
+- Define all locations and events
+
+For server/server.js:
+- ES6 module syntax
+- Export events and functions
+- All handlers MUST use renderData
+- Implement proper error handling
+- Include request/response validation
+
+For config/iparams.json:
+- Valid JSON structure
+- Secure parameter definitions
+- Appropriate input types
+- Validation rules
+
+For app/index.html:
+- Include {{{appclient}}}
+- Include <link rel="stylesheet" href="styles/style.css">
+- Modern, responsive structure
+- Semantic HTML
+
+For app/scripts/app.js:
+- Use client.init()
+- Event listeners
+- API calls with error handling
+- UI updates
+
+For app/styles/style.css:
+- Modern, clean design
+- Responsive layout
+- Component-specific styles
+- Theme variables
+
+For app/styles/images/icon.svg:
+- RAW SVG only
+- 64x64 dimensions
+- Clean, scalable design
+
+**OUTPUT FORMAT:**
+Generate ONLY the raw code with detailed inline comments. No markdown wrapper, no explanations outside the code. The code should be production-ready and follow all FDK 3.0 standards.`,
+            'You are a precise FDK v3.0 code generator. Generate production-ready code with comprehensive inline documentation.'
         );
 
         if (result.success) {

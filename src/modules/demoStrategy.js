@@ -6,6 +6,98 @@
 import GeminiService from '../services/geminiService.js';
 
 const DemoStrategy = {
+    // Template storage
+    templates: {
+        discovery: [],
+        build: [],
+        script: []
+    },
+
+    // Load templates from localStorage
+    loadTemplates() {
+        const stored = localStorage.getItem('demoStrategyTemplates');
+        if (stored) {
+            try {
+                this.templates = JSON.parse(stored);
+            } catch (e) {
+                console.error('Failed to load templates:', e);
+                this.templates = { discovery: [], build: [], script: [] };
+            }
+        }
+    },
+
+    // Save templates to localStorage
+    saveTemplates() {
+        localStorage.setItem('demoStrategyTemplates', JSON.stringify(this.templates));
+    },
+
+    // Save current result as template
+    saveTemplate(type) {
+        const resultEl = document.getElementById(`${type}-result`);
+        if (!resultEl || resultEl.querySelector('.empty-state')) {
+            window.App.showToast('No content to save as template', 'warning');
+            return;
+        }
+
+        const name = prompt(`Enter a name for this ${type} template:`);
+        if (!name) return;
+
+        const content = resultEl.innerText;
+        this.templates[type].push({
+            id: Date.now(),
+            name: name,
+            content: content,
+            created: new Date().toISOString()
+        });
+
+        this.saveTemplates();
+        window.App.showToast(`Template "${name}" saved!`, 'success');
+    },
+
+    // Load template
+    loadTemplate(type, templateId) {
+        const template = this.templates[type].find(t => t.id === templateId);
+        if (!template) return;
+
+        const resultEl = document.getElementById(`${type}-result`);
+        resultEl.innerHTML = `
+            <div class="result-body">${window.MarkdownRenderer.parse(template.content)}</div>
+            <div class="result-meta" style="margin-top:var(--space-4); opacity:0.8;">
+                <span style="color:var(--text-tertiary);">📋 Template: ${template.name} | Saved: ${new Date(template.created).toLocaleDateString()}</span>
+            </div>
+        `;
+        window.App.showToast(`Loaded template: ${template.name}`, 'success');
+    },
+
+    // Delete template
+    deleteTemplate(type, templateId) {
+        if (!confirm('Are you sure you want to delete this template?')) return;
+
+        this.templates[type] = this.templates[type].filter(t => t.id !== templateId);
+        this.saveTemplates();
+        window.App.showToast('Template deleted', 'success');
+
+        // Refresh the template selector if it exists
+        this.renderTemplateSelector(type);
+    },
+
+    // Render template selector dropdown
+    renderTemplateSelector(type) {
+        const container = document.getElementById(`${type}-templates`);
+        if (!container) return;
+
+        const templates = this.templates[type];
+        if (templates.length === 0) {
+            container.innerHTML = '<option value="">No saved templates</option>';
+            return;
+        }
+
+        container.innerHTML = `
+            <option value="">Load a template...</option>
+            ${templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+        `;
+    },
+
     render() {
         return `
         <div class="module-page">
@@ -18,6 +110,7 @@ const DemoStrategy = {
                 <button class="tab active" data-tab="discovery">Discovery Intel</button>
                 <button class="tab" data-tab="build">Strategy & Build</button>
                 <button class="tab" data-tab="script">Script from Deck</button>
+                <button class="tab" data-tab="templates">📚 Templates</button>
             </div>
 
             <!-- Discovery Tab -->
@@ -68,6 +161,7 @@ e.g., 'VP Support mentioned 15-min avg handle time, 4 tools, Zendesk contract en
                             <div class="result-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="DemoStrategy.copyResult('discovery')">📋 Copy</button>
                                 <button class="btn btn-sm btn-secondary" onclick="DemoStrategy.shareToSlack('discovery')">💬 Slack</button>
+                                <button class="btn btn-sm btn-primary" onclick="DemoStrategy.saveTemplate('discovery')">💾 Save Template</button>
                             </div>
                         </div>
                         <div id="discovery-result" class="result-content">
@@ -132,6 +226,7 @@ e.g., 'Must show: omnichannel inbox consolidation (they have 4 tools), Freddy AI
                             <h2>📖 Demo Strategy Plan</h2>
                             <div class="result-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="DemoStrategy.copyResult('build')">📋 Copy</button>
+                                <button class="btn btn-sm btn-primary" onclick="DemoStrategy.saveTemplate('build')">💾 Save Template</button>
                             </div>
                         </div>
                         <div id="build-result" class="result-content">
@@ -190,6 +285,7 @@ e.g., 'Must show: omnichannel inbox consolidation (they have 4 tools), Freddy AI
                             <h2>📝 Click-Track-Talk Script</h2>
                             <div class="result-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="DemoStrategy.copyResult('script')">📋 Copy</button>
+                                <button class="btn btn-sm btn-primary" onclick="DemoStrategy.saveTemplate('script')">💾 Save Template</button>
                             </div>
                         </div>
                         <div id="script-result" class="result-content">
@@ -202,10 +298,58 @@ e.g., 'Must show: omnichannel inbox consolidation (they have 4 tools), Freddy AI
                     </div>
                 </div>
             </div>
+
+            <!-- Templates Tab -->
+            <div id="tab-templates" class="tab-content">
+                <div class="module-grid">
+                    <div class="glass-card module-panel">
+                        <h2>📚 Discovery Templates</h2>
+                        <div class="form-group" style="margin-bottom: var(--space-4)">
+                            <label class="form-label">Saved Templates</label>
+                            <select id="discovery-templates" class="form-select" onchange="if(this.value) DemoStrategy.loadTemplate('discovery', parseInt(this.value))">
+                                <option value="">Load a template...</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: var(--space-4)">
+                            <button class="btn btn-secondary" onclick="DemoStrategy.saveTemplate('discovery')">💾 Save Last Discovery Result</button>
+                            <button class="btn btn-danger" onclick="DemoStrategy.deleteTemplate('discovery', document.getElementById('discovery-templates').value)">🗑️ Delete Selected</button>
+                        </div>
+                    </div>
+                    <div class="glass-card module-panel">
+                        <h2>🏗️ Strategy Templates</h2>
+                        <div class="form-group" style="margin-bottom: var(--space-4)">
+                            <label class="form-label">Saved Templates</label>
+                            <select id="build-templates" class="form-select" onchange="if(this.value) DemoStrategy.loadTemplate('build', parseInt(this.value))">
+                                <option value="">Load a template...</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: var(--space-4)">
+                            <button class="btn btn-secondary" onclick="DemoStrategy.saveTemplate('build')">💾 Save Last Strategy Result</button>
+                            <button class="btn btn-danger" onclick="DemoStrategy.deleteTemplate('build', document.getElementById('build-templates').value)">🗑️ Delete Selected</button>
+                        </div>
+                    </div>
+                    <div class="glass-card module-panel">
+                        <h2>🎬 Script Templates</h2>
+                        <div class="form-group" style="margin-bottom: var(--space-4)">
+                            <label class="form-label">Saved Templates</label>
+                            <select id="script-templates" class="form-select" onchange="if(this.value) DemoStrategy.loadTemplate('script', parseInt(this.value))">
+                                <option value="">Load a template...</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: var(--space-4)">
+                            <button class="btn btn-secondary" onclick="DemoStrategy.saveTemplate('script')">💾 Save Last Script Result</button>
+                            <button class="btn btn-danger" onclick="DemoStrategy.deleteTemplate('script', document.getElementById('script-templates').value)">🗑️ Delete Selected</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>`;
     },
 
     init() {
+        // Load templates from storage
+        this.loadTemplates();
+
         // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -217,6 +361,13 @@ e.g., 'Must show: omnichannel inbox consolidation (they have 4 tools), Freddy AI
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 targetTab.classList.add('active');
                 document.getElementById(`tab-${tabId}`).classList.add('active');
+
+                // Render template selectors when switching to templates tab
+                if (tabId === 'templates') {
+                    this.renderTemplateSelector('discovery');
+                    this.renderTemplateSelector('build');
+                    this.renderTemplateSelector('script');
+                }
             });
         });
     },
@@ -249,109 +400,157 @@ ${url ? `Company URL/LinkedIn: ${url}` : ''}
 ${industry ? `Industry: ${industry}` : ''}
 ${input ? `\nAdditional Discovery Notes:\n${input}` : ''}
 
-**Research the following and present as a structured intelligence brief:**
+**Research the following and present as a structured intelligence brief with 10-30 detailed points per section:**
 
-## 1. Company Snapshot
-| Attribute | Detail |
-| --- | --- |
-| Company | ${company} |
-| Industry | ... |
-| HQ / Regions | ... |
-| Employees (est.) | ... |
-| Revenue (est.) | ... |
-| Funding / IPO Status | ... |
-| Ticker Symbol | ... |
+## 1. Company Snapshot (10-15 points)
+| Attribute | Detail | Source |
+| --- | --- | --- |
+| Company | ${company} | ... |
+| Industry | ... | ... |
+| HQ / Regions | ... | ... |
+| Employees (est.) | ... | ... |
+| Revenue (est.) | ... | ... |
+| Funding / IPO Status | ... | ... |
+| Ticker Symbol | ... | ... |
+| Market Cap | ... | ... |
+| Founded Year | ... | ... |
+| Parent Company | ... | ... |
+| Subsidiaries | ... | ... |
+| Key Brands | ... | ... |
+| Business Model | ... | ... |
+| Customer Base Size | ... | ... |
+| Geographic Reach | ... | ... |
 
-## 2. 10-K / Annual Report Analysis
+## 2. 10-K / Annual Report Analysis (15-20 points)
 Search for the company's most recent 10-K filing or annual report:
-- **Revenue trend** (3-year if available)
-- **Cost structure** — SG&A, R&D, cost of revenue breakdown
+- **Revenue trend** (3-year if available) with specific numbers
+- **Cost structure** — SG&A, R&D, cost of revenue breakdown with percentages
 - **Strategic initiatives** mentioned in the filing (digital transformation, CX, IT modernization)
 - **Risk factors** relevant to CX/IT (legacy systems, customer churn, regulatory)
-- **Capex / IT spend** indicators
+- **Capex / IT spend** indicators with specific figures
 - **Key metrics** (ARR, NRR, customer count, agent count if disclosed)
+- **Geographic revenue breakdown**
+- **Segment performance**
+- **M&A activity**
+- **Debt structure**
+- **Cash position**
+- **Dividend policy**
+- **Share buyback programs**
+- **Executive compensation**
+- **Board composition**
+- **ESG initiatives**
+- **Sustainability goals**
+- **Innovation investments**
+- **R&D spending**
+- **Patent portfolio**
 
-## 3. Stock & Financial Health
+## 3. Stock & Financial Health (10-15 points)
 - Stock performance: 52-week high/low, recent trend, market cap
 - Latest quarterly earnings: revenue, growth %, profitability, guidance
 - Analyst sentiment and price targets
 - Recent fundraising (if private)
+- Short interest
+- Institutional ownership
+- Insider trading activity
+- Earnings surprises history
+- Valuation metrics (P/E, EV/EBITDA, etc.)
+- Peer comparison
+- Credit rating
+- Bond yields
+- Currency exposure
+- Interest rate sensitivity
 
-## 4. Recent News & Market Activity
-| Date | Headline | Relevance to CX/IT |
-| --- | --- | --- |
-(Last 5-10: acquisitions, partnerships, layoffs, product launches, leadership changes, digital transformation announcements)
-
-## 5. Leadership & Org Structure
-| Name | Title | LinkedIn | Relevance |
+## 4. Recent News & Market Activity (10-15 points)
+| Date | Headline | Relevance to CX/IT | Source |
 | --- | --- | --- | --- |
-(CIO, CTO, VP Support/CX, VP IT, CFO, CEO)
+(Last 10-15: acquisitions, partnerships, layoffs, product launches, leadership changes, digital transformation announcements)
+
+## 5. Leadership & Org Structure (10-15 points)
+| Name | Title | LinkedIn | Relevance | Tenure |
+| --- | --- | --- | --- | --- |
+(CIO, CTO, VP Support/CX, VP IT, CFO, CEO, Board Members)
 - Likely buying committee composition
 - Champion candidates
 - Recent leadership changes
+- Executive background
+- Previous companies
+- Education
+- Board memberships
+- Industry recognition
+- Speaking engagements
+- Published articles
 
-## 6. Current Tech Stack & Tools
-| Category | Likely Tool | Confidence | Evidence Source |
-| --- | --- | --- | --- |
-| Helpdesk / Support | ... | High/Med/Low | Job posting / G2 / BuiltWith |
-| CRM | ... | ... | ... |
-| ITSM | ... | ... | ... |
-| Chat / Messaging | ... | ... | ... |
-| Contact Center | ... | ... | ... |
-| Marketing Automation | ... | ... | ... |
-| Middleware / iPaaS | ... | ... | ... |
-(Research from job postings, G2 reviews, BuiltWith, LinkedIn, press releases)
+## 6. Current Tech Stack & Tools (15-20 points)
+| Category | Likely Tool | Confidence | Evidence Source | Replacement Potential |
+| --- | --- | --- | --- | --- |
+| Helpdesk / Support | ... | High/Med/Low | Job posting / G2 / BuiltWith | ... |
+| CRM | ... | ... | ... | ... |
+| ITSM | ... | ... | ... | ... |
+| Chat / Messaging | ... | ... | ... | ... |
+| Contact Center | ... | ... | ... | ... |
+| Marketing Automation | ... | ... | ... | ... |
+| Middleware / iPaaS | ... | ... | ... | ... |
+| Data Warehouse | ... | ... | ... | ... |
+| Analytics | ... | ... | ... | ... |
+| Collaboration | ... | ... | ... | ... |
+(Research from job postings, G2 reviews, BuiltWith, LinkedIn, press releases, StackShare)
 
-## 7. Social Signals & Sentiment
+## 7. Social Signals & Sentiment (10-15 points)
 - LinkedIn posts from leadership about CX, support, digital transformation
 - Glassdoor: employee satisfaction, support team reviews, IT team reviews
 - G2/Capterra reviews of their current tools (what do they complain about?)
 - Twitter/X mentions, public support complaints
+- Reddit discussions
+- Industry forum mentions
+- Customer review sites
+- Social media sentiment analysis
+- Brand perception
+- Competitor mentions
 
-## 8. Pain Hypothesis (Director's View)
-| Hypothesized Pain | Evidence (from 10-K/news/social) | Business Impact ($) | Freshworks Solution |
+## 8. Pain Hypothesis (Director's View) (10-15 points)
+| Hypothesized Pain | Evidence (from 10-K/news/social) | Business Impact ($) | Freshworks Solution | Confidence Level |
+| --- | --- | --- | --- | --- |
+(Map 10-15 high-confidence pains with specific evidence)
+
+## 9. Discovery Call Game Plan (20-25 points)
+
+### Business Questions (5 points)
+| # | Question | Intent | Follow-up |
 | --- | --- | --- | --- |
-(Map 5-7 high-confidence pains)
+| 1 | What are your top 3 strategic priorities this year? | Map to CX/IT transformation | ... |
+| 2 | How do you measure CX/support success today? | Understand KPIs | ... |
+| 3 | What's the cost of a support interaction today? | ROI framing | ... |
+| 4 | What does your ideal future state look like in 12 months? | Vision alignment | ... |
+| 5 | Who are the key stakeholders in this decision? | Org map | ... |
 
-## 9. Discovery Call Game Plan
+### Technical Questions (5 points)
+| # | Question | Intent | Follow-up |
+| --- | --- | --- | --- |
+| 1 | Walk me through your current support architecture | Tech stack mapping | ... |
+| 2 | What integrations are critical for day-to-day operations? | Integration complexity | ... |
+| 3 | What's your API maturity level? | Integration readiness | ... |
+| 4 | How do you handle data migration today? | Migration risk | ... |
+| 5 | What's your uptime/SLA requirement? | Non-negotiables | ... |
 
-### Business Questions
-| # | Question | Intent |
-| --- | --- | --- |
-| 1 | What are your top 3 strategic priorities this year? | Map to CX/IT transformation |
-| 2 | How do you measure CX/support success today? | Understand KPIs |
-| 3 | What's the cost of a support interaction today? | ROI framing |
-| 4 | What does your ideal future state look like in 12 months? | Vision alignment |
-| 5 | Who are the key stakeholders in this decision? | Org map |
+### Current Process Questions (5 points)
+| # | Question | Intent | Follow-up |
+| --- | --- | --- | --- |
+| 1 | Walk me through a ticket lifecycle from creation to resolution | Process gaps | ... |
+| 2 | How do escalations work today? | Escalation pain | ... |
+| 3 | What's your current SLA structure? | SLA complexity | ... |
+| 4 | How do you handle peak volume periods? | Scalability | ... |
+| 5 | What manual processes would you most like to automate? | Automation opportunity | ... |
 
-### Technical Questions
-| # | Question | Intent |
-| --- | --- | --- |
-| 1 | Walk me through your current support architecture | Tech stack mapping |
-| 2 | What integrations are critical for day-to-day operations? | Integration complexity |
-| 3 | What's your API maturity level? | Integration readiness |
-| 4 | How do you handle data migration today? | Migration risk |
-| 5 | What's your uptime/SLA requirement? | Non-negotiables |
+### Systems & Integration Questions (4 points)
+| # | Question | Intent | Follow-up |
+| --- | --- | --- | --- |
+| 1 | What systems does your support team touch daily? | Tool sprawl | ... |
+| 2 | How do CX tools integrate with your CRM/ERP? | Integration pain | ... |
+| 3 | What data flows between systems today? | Data silos | ... |
+| 4 | What middleware or iPaaS do you use? | Technical landscape | ... |
 
-### Current Process Questions
-| # | Question | Intent |
-| --- | --- | --- |
-| 1 | Walk me through a ticket lifecycle from creation to resolution | Process gaps |
-| 2 | How do escalations work today? | Escalation pain |
-| 3 | What's your current SLA structure? | SLA complexity |
-| 4 | How do you handle peak volume periods? | Scalability |
-| 5 | What manual processes would you most like to automate? | Automation opportunity |
-
-### Systems & Integration Questions
-| # | Question | Intent |
-| --- | --- | --- |
-| 1 | What systems does your support team touch daily? | Tool sprawl |
-| 2 | How do CX tools integrate with your CRM/ERP? | Integration pain |
-| 3 | What data flows between systems today? | Data silos |
-| 4 | What middleware or iPaaS do you use? | Technical landscape |
-
-### Landmine Questions (Surface Competitor Weakness)
-5 questions designed to expose weaknesses of their likely current vendor.
+### Landmine Questions (Surface Competitor Weakness) (5 points)
+5 questions designed to expose weaknesses of their likely current vendor with specific follow-ups.
 
 ### Opening Hook
 Reference recent 10-K filing, earnings, or news to build instant credibility.
@@ -359,8 +558,8 @@ Reference recent 10-K filing, earnings, or news to build instant credibility.
 ### Value Hypothesis to Validate
 A 2-sentence hypothesis connecting their strategic priorities to Freshworks value.
 
-Cross-check ALL facts with internet sources. Cite sources where possible (e.g., [Source: SEC 10-K], [Source: LinkedIn], [Source: G2]).`,
-            'You are a Director-level Presales Intelligence expert. Research companies like a top SE preparing for a $500K+ deal. Always check 10-K/annual reports for financial data. Use internet grounding to find real, current data. Be specific, not generic.',
+Cross-check ALL facts with internet sources. Cite sources where possible (e.g., [Source: SEC 10-K], [Source: LinkedIn], [Source: G2]). Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`,
+            'You are a Director-level Presales Intelligence expert. Research companies like a top SE preparing for a $500K+ deal. Always check 10-K/annual reports for financial data. Use internet grounding to find real, current data. Be specific, not generic. Generate 10-30 detailed points per section with tables where appropriate.',
             attachments
         );
 
@@ -414,47 +613,62 @@ Key Pains & Use Cases: ${input}
 
 Use any attached discovery reports or architecture diagrams.
 
-**Output this exact structure:**
+**Output this exact structure with 10-30 detailed points per section:**
 
-## Demo Strategy Summary
-- **Objective:** What must this demo prove?
-- **Win Theme:** One compelling narrative thread (e.g., "Unified CX that scales")
-- **Audience Persona:** What they care about, what bores them
+## Demo Strategy Summary (10-15 points)
+- **Objective:** What must this demo prove? (3-5 specific points)
+- **Win Theme:** One compelling narrative thread (e.g., "Unified CX that scales") with 3-5 supporting points
+- **Audience Persona:** What they care about, what bores them (5-7 specific points)
+- **Success Metrics:** How will we know the demo was successful? (3-5 points)
+- **Key Messages:** 3-5 core messages to convey (5-7 points each)
 
-## Demo Narrative Arc
-| Phase | Duration | Objective | Emotional Beat |
-| --- | --- | --- | --- |
-| Hook (Why Change?) | 2-3 min | Create urgency | "You're losing money" |
-| Vision (Why Freshworks?) | 3-5 min | Show the future state | "Imagine if..." |
-| Proof (Live Demo) | 15-20 min | Validate capabilities | "Let me show you" |
-| Close (Why Now?) | 3-5 min | Drive next steps | "Here's the path" |
+## Demo Narrative Arc (10-15 points)
+| Phase | Duration | Objective | Emotional Beat | Key Talking Points | Transitions |
+| --- | --- | --- | --- | --- | --- |
+| Hook (Why Change?) | 2-3 min | Create urgency | "You're losing money" | 3-5 specific points | ... |
+| Vision (Why Freshworks?) | 3-5 min | Show the future state | "Imagine if..." | 3-5 specific points | ... |
+| Proof (Live Demo) | 15-20 min | Validate capabilities | "Let me show you" | 5-7 specific points | ... |
+| Close (Why Now?) | 3-5 min | Drive next steps | "Here's the path" | 3-5 specific points | ... |
 
-## Environment Setup — Admin Click-Paths
+## Environment Setup — Admin Click-Paths (15-20 points)
 For each demo requirement, provide exact Freshworks ${product} configuration:
 
-### [Setup Item]
+### [Setup Item] (5-7 points per item)
 **Navigation:** Admin → [exact path]
-| Step | Action | Why |
-| --- | --- | --- |
-| 1 | Navigate to... | ... |
+| Step | Action | Why | Time Required | Difficulty |
+| --- | --- | --- | --- | --- |
+| 1 | Navigate to... | ... | ... | ... |
+| 2 | Configure... | ... | ... | ... |
+| 3 | Test... | ... | ... | ... |
+(Provide 5-7 setup items with detailed steps)
 
-## Demo Data Prep
-| Data Item | Example | Purpose |
-| --- | --- | --- |
-(Sample tickets, contacts, SLAs, automations needed for a convincing demo)
+## Demo Data Prep (10-15 points)
+| Data Item | Example | Purpose | Quantity | Setup Time |
+| --- | --- | --- | --- | --- |
+(Sample tickets, contacts, SLAs, automations needed for a convincing demo - 10-15 items)
 
-## Competitive Landmines
-| If They Ask About... | Position As... | Proof Point |
-| --- | --- | --- |
-(3-5 likely competitor comparisons and how to handle)
+## Competitive Landmines (10-15 points)
+| If They Ask About... | Position As... | Proof Point | Evidence | Follow-up Question |
+| --- | --- | --- | --- | --- |
+(5-7 likely competitor comparisons and how to handle with specific evidence)
 
-## Risk & Gotchas
-| Risk | Mitigation |
-| --- | --- |
-(What could go wrong in the demo and how to handle it)
+## Risk & Gotchas (10-15 points)
+| Risk | Likelihood | Impact | Mitigation | Contingency Plan |
+| --- | --- | --- | --- | --- |
+(5-7 common demo risks with detailed mitigation strategies)
 
-Reference official Freshworks docs for admin paths. [Source: Freshdesk Admin Guide]`,
-            `You are a Director-level Freshworks ${product} demo strategist. Think like an SE who has done 500+ demos. Be specific about click-paths, demo data, and narrative flow. Use Markdown tables.`,
+## Demo Flow Script (20-25 points)
+| Time | Screen Action | Feature | Talk Track | Pain Addressed | Transition |
+| --- | --- | --- | --- | --- | --- |
+(Complete timed breakdown with 20-25 specific points)
+
+## Objection Handling (10-15 points)
+| Objection Category | Specific Objection | Response | Proof Point | Follow-up |
+| --- | --- | --- | --- | --- |
+(5-7 objection categories with 2-3 specific objections each)
+
+Reference official Freshworks docs for admin paths. [Source: Freshdesk Admin Guide] Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`,
+            `You are a Director-level Freshworks ${product} demo strategist. Think like an SE who has done 500+ demos. Be specific about click-paths, demo data, and narrative flow. Use Markdown tables. Generate 10-30 detailed points per section.`,
             attachments
         );
 
@@ -501,42 +715,60 @@ Features to Demo: ${features || 'Standard Freshworks features'}
 
 If a slide deck is attached, generate slide-by-slide talk tracks.
 
-**Output this exact structure:**
+**Output this exact structure with 10-30 detailed points per section:**
 
-## Script Overview
+## Script Overview (10-15 points)
 - **Duration:** ${duration} minutes
 - **Audience:** ${audience}
-- **Opening Hook:** (1-2 sentences referencing customer's specific pain)
-- **Closing CTA:** (specific next step)
+- **Opening Hook:** (3-5 sentences referencing customer's specific pain with emotional impact)
+- **Closing CTA:** (specific next step with 2-3 alternatives)
+- **Key Messages:** 3-5 core messages to convey (3-5 points each)
+- **Success Metrics:** How will we know the script was successful? (3-5 points)
 
-## Slide-by-Slide / Section-by-Section Script
+## Slide-by-Slide / Section-by-Section Script (20-30 points per section)
 
-### Slide 1: [Title] (0:00 - X:XX)
-**CLICK:** What to show on screen
-**SAY:** "Exact talk track in quotes — conversational, not robotic"
-**TRANSITION:** How to bridge to next section
+### Slide 1: [Title] (0:00 - X:XX) (5-7 points)
+**CLICK:** What to show on screen (3-5 specific actions)
+**SAY:** "Exact talk track in quotes — conversational, not robotic" (3-5 key phrases)
+**TRANSITION:** How to bridge to next section (2-3 options)
+**VISUAL CUES:** Body language, tone, pacing (3-5 points)
+**PAIN ADDRESSED:** Specific pain points (2-3 points)
 
-(Repeat for each section/slide)
+(Repeat for each section/slide with 5-7 points each)
 
-## Full Click-Track-Talk Table
-| Time | Click (Screen Action) | Feature | Talk Track | Pain Addressed |
+## Full Click-Track-Talk Table (20-25 points)
+| Time | Click (Screen Action) | Feature | Talk Track | Pain Addressed | Transition | Visual Cue |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0:00 | Open dashboard | Overview | "Let me show you what your team's morning looks like..." | Tool fragmentation | ... | ... |
+(Complete timed breakdown with 20-25 specific points)
+
+## Objection Handles (10-15 points)
+| Objection Category | Specific Objection | Response | Proof Point | Follow-up Question | Tone |
+| --- | --- | --- | --- | --- | --- |
+(5-7 objection categories with 2-3 specific objections each for ${audience} audience with crisp responses)
+
+## Power Moments (10-15 points)
+| Moment | Feature | Visual Impact | Talk Track | Emotional Beat |
 | --- | --- | --- | --- | --- |
-| 0:00 | Open dashboard | Overview | "Let me show you what your team's morning looks like..." | Tool fragmentation |
-(Complete timed breakdown)
+(5-7 "wow" moments to create in the demo — specific features that visually impress with detailed talk tracks)
 
-## Objection Handles
-| If They Say... | Respond With... |
-| --- | --- |
-(5 likely objections for ${audience} audience with crisp responses)
+## Disaster Recovery (10-15 points)
+| If This Happens... | Do This... | Prevention | Recovery Time | Communication |
+| --- | --- | --- | --- | --- |
+(5-7 common demo failures and recovery plans with detailed steps)
 
-## Power Moments
-3 "wow" moments to create in the demo — specific features that visually impress.
+## Timing Breakdown (10-15 points)
+| Section | Allocated Time | Buffer Time | Total Time | Notes |
+| --- | --- | --- | --- | --- |
+(Detailed timing breakdown for ${duration}-minute script with 10-15 points)
 
-## Disaster Recovery
-| If This Happens... | Do This... |
-| --- | --- |
-(3 common demo failures and recovery plans)`,
-            `You are a world-class Freshworks demo presenter. Write scripts that sound natural, not robotic. Every word should earn its place. Use Markdown tables for structured content.`,
+## Technical Requirements (10-15 points)
+| Requirement | Specification | Setup Time | Verification |
+| --- | --- | --- | --- |
+(5-7 technical requirements for successful demo execution)
+
+Reference official Freshworks docs for admin paths. [Source: Freshdesk Admin Guide] Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`,
+            `You are a world-class Freshworks demo presenter. Write scripts that sound natural, not robotic. Every word should earn its place. Use Markdown tables for structured content. Generate 10-30 detailed points per section.`,
             attachments
         );
 

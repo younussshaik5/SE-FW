@@ -7,13 +7,24 @@ const GeminiService = {
     openRouterKey: null,
     openRouterModel: null,
     multimodalModel: null,
+    responseCache: new Map(), // Cache for storing responses
 
     init() {
-        this.openRouterKey = localStorage.getItem('openrouter_api_key') || window.APP_CONFIG?.OPENROUTER_API_KEY || null;
-        this.openRouterModel = localStorage.getItem('openrouter_model') || window.APP_CONFIG?.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free';
-        this.multimodalModel = localStorage.getItem('openrouter_multimodal_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL || 'nvidia/nemotron-nano-12b-v2-vl:free';
-        this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'qwen/qwen3-vl-30b-a3b-instruct';
-        this.tertiaryMultimodalModel = localStorage.getItem('openrouter_multimodal_tertiary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || 'google/gemma-3-27b-it:free';
+        const getValidKey = (key) => (key && key.trim() !== "") ? key : null;
+
+        this.openRouterKey = getValidKey(localStorage.getItem('openrouter_api_key')) ||
+            getValidKey(window.APP_CONFIG?.OPENROUTER_API_KEY) ||
+            getValidKey(window.ENV?.OPENROUTER_API_KEY) || null;
+
+        this.openRouterModel = getValidKey(localStorage.getItem('openrouter_model')) ||
+            getValidKey(window.APP_CONFIG?.OPENROUTER_MODEL) ||
+            getValidKey(window.ENV?.OPENROUTER_MODEL) || 'nvidia/nemotron-nano-12b-v2-vl:free';
+
+        this.multimodalModel = getValidKey(localStorage.getItem('openrouter_multimodal_model')) ||
+            getValidKey(window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL) ||
+            getValidKey(window.ENV?.OPENROUTER_MULTIMODAL_MODEL) || 'arcee-ai/trinity-large-preview:free';
+        this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'google/gemma-3-27b-it:free';
+        this.tertiaryMultimodalModel = localStorage.getItem('openrouter_multimodal_tertiary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || null;
         this.googleAIKey = localStorage.getItem('google_ai_key') || window.APP_CONFIG?.GOOGLE_AI_KEY || null;
     },
 
@@ -53,8 +64,17 @@ const GeminiService = {
         if (window.APP_CONFIG) window.APP_CONFIG.GOOGLE_AI_KEY = key;
     },
 
+    clearCache() {
+        this.responseCache.clear();
+        console.log('[AI] Cache cleared');
+    },
+
+    getCacheSize() {
+        return this.responseCache.size;
+    },
+
     isLiveMode() {
-        return !!(this.openRouterKey || window.APP_CONFIG?.OPENROUTER_API_KEY);
+        return !!(this.openRouterKey || window.APP_CONFIG?.OPENROUTER_API_KEY || window.ENV?.OPENROUTER_API_KEY);
     },
 
     async generateContent(prompt, systemInstruction = '', attachments = [], tools = []) {
@@ -65,6 +85,19 @@ const GeminiService = {
                 success: false,
                 error: 'No AI Provider Configured. Please add an OpenRouter API key in Settings.'
             };
+        }
+
+        // Generate cache key based on prompt, systemInstruction, and attachments
+        const cacheKey = JSON.stringify({
+            prompt,
+            systemInstruction,
+            attachments: attachments.map(a => ({ mimeType: a.mimeType, data: a.data.substring(0, 100) })) // Only cache first 100 chars of attachment data
+        });
+
+        // Check cache first (only for text-only requests)
+        if (attachments.length === 0 && this.responseCache.has(cacheKey)) {
+            console.log('[AI] Returning cached response');
+            return this.responseCache.get(cacheKey);
         }
 
         // Inject Grounding & Structure Instructions
@@ -124,11 +157,7 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
                 },
                 body: JSON.stringify({
                     model,
-                    messages,
-                    // Auto-enable OCR for non-multimodal models if needed
-                    provider: {
-                        pdf_engine: 'pdf-text'
-                    }
+                    messages
                 }),
                 signal: AbortSignal.timeout(60000) // 60s timeout
             });
@@ -185,14 +214,14 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
             return { success: true, text, source: 'google-ai-studio', model };
         };
 
-        const primaryModel = this.openRouterModel || 'google/gemma-3-27b-it:free';
-        const multimodal1 = this.multimodalModel || 'nvidia/nemotron-nano-12b-v2-vl:free';
-        const multimodal2 = this.secondaryMultimodalModel || 'qwen/qwen3-vl-30b-a3b-instruct';
+        const primaryModel = this.openRouterModel || 'nvidia/nemotron-nano-12b-v2-vl:free';
+        const multimodal1 = this.multimodalModel || 'arcee-ai/trinity-large-preview:free';
+        const multimodal2 = this.secondaryMultimodalModel || 'google/gemma-3-27b-it:free';
 
         // Create a list of models to try in EXACT ORDER requested by user:
-        // 1. Gemma (Text Primary)
-        // 2. Nvidia (Multimodal Primary)
-        // 3. Qwen (Multimodal Secondary)
+        // 1. Nemotron (Text Primary)
+        // 2. Arcee AI Trinity (Multimodal Primary)
+        // 3. Gemma (Multimodal Secondary)
         // 4. Native Google (Expert Fallback)
         const retryChain = [
             { id: primaryModel, provider: 'openrouter' },
@@ -219,11 +248,24 @@ CROSS-CHECK & GROUNDING INSTRUCTIONS:
                     console.warn(`[AI] Attempting fallback to ${modelToTry.id} (${modelToTry.provider})...`);
                 }
 
+                let result;
                 if (modelToTry.provider === 'google') {
-                    return await makeGoogleRequest(modelToTry.id);
+                    result = await makeGoogleRequest(modelToTry.id);
                 } else {
-                    return await makeRequest(modelToTry.id);
+                    result = await makeRequest(modelToTry.id);
                 }
+
+                // Cache successful responses (only for text-only requests)
+                if (attachments.length === 0 && result.success) {
+                    this.responseCache.set(cacheKey, result);
+                    // Limit cache size to prevent memory issues
+                    if (this.responseCache.size > 100) {
+                        const firstKey = this.responseCache.keys().next().value;
+                        this.responseCache.delete(firstKey);
+                    }
+                }
+
+                return result;
             } catch (error) {
                 console.error(`[AI] Model ${modelToTry.id} failed:`, error.message);
                 lastError = error;

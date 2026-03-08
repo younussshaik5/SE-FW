@@ -425,7 +425,7 @@ Be conversational, use emojis, be thorough but efficient.`,
         const endpointRef = this.getEndpointReference();
 
         const result = await GeminiService.generateContent(
-            `You are a Freshworks API architect. Based on this discovery conversation, generate a COMPLETE provisioning plan for a **${this.selectedProduct.replace(/_/g, ' ')}** instance.
+            `You are a Freshworks API architect. Based on this discovery conversation, generate a COMPLETE provisioning plan for a **${this.selectedProduct.replace(/_/g, ' ')}** instance with 10-30 detailed points per section.
 
 Conversation:
 ${conversationHistory}
@@ -436,6 +436,7 @@ ${conversationHistory}
 2. Follow STRICT dependency order: ${order.join(' → ')}
 3. Cover EVERY relevant entity. A typical production instance has 30-80 tiles.
 4. NO duplicates. Each entity exactly once.
+5. Include 10-30 detailed data points per tile payload.
 
 ## FOR EACH TILE provide:
 {
@@ -443,23 +444,29 @@ ${conversationHistory}
   "label": "Human-readable (e.g. 'Create L1 Support Group')",
   "method": "POST",
   "endpoint": "/api/v2/exact_endpoint",
-  "payload": { ... complete valid JSON with ALL required fields ... }
+  "payload": { ... complete valid JSON with ALL required fields ... },
+  "description": "Detailed description of what this tile does",
+  "dependencies": ["list of dependent tile labels"],
+  "validation_rules": ["list of validation rules"],
+  "error_handling": "strategy for handling failures"
 }
 
-## PAYLOAD RULES
+## PAYLOAD RULES WITH 10-30 DETAILED POINTS
 - Populate with REALISTIC data derived from conversation context
+- Include 10-30 detailed data points per payload
 - For cross-entity references use: "{{ref:category:label}}" placeholder
   Example: "group_id": "{{ref:groups:Create L1 Support Group}}"
 - These get resolved to real IDs on execution
 - Include ALL required fields per official API docs. Do NOT include "id" (auto-generated)
+- Add descriptive fields, metadata, and configuration options
 
-## ENDPOINT REFERENCE
+## ENDPOINT REFERENCE WITH DETAILED SPECIFICATIONS
 ${endpointRef}
 
-## COMPLETENESS CHECKLIST
+## COMPLETENESS CHECKLIST WITH DETAILED POINTS
 For ${this.selectedProduct.replace(/_/g, ' ')} you MUST include tiles for ALL of these if the user discussed them:
 
-${order.map((o, i) => `${i + 1}. ${o.replace(/_/g, ' ')}`).join('\n')}
+${order.map((o, i) => `${i + 1}. ${o.replace(/_/g, ' ')} (10-30 detailed data points)`).join('\n')}
 
 ## IMPORTANT
 - For automations: type_id 1=ticket_creation, 2=time_trigger, 3=ticket_update, 4=observer
@@ -471,8 +478,8 @@ ${this.selectedProduct.includes('omnichannel') || this.selectedProduct === 'cust
                 `- For omnichannel: include outbound_messages tiles for proactive messaging
 - For omnichannel groups: use /api/v2/groups with omnichannel agent limits` : ''}
 
-Output ONLY valid JSON array. No markdown. No explanation. No wrapping object.`,
-            'You are a senior Freshworks API engineer. You know every endpoint from developers.freshdesk.com, api.freshservice.com, developers.freshsales.io. Output ONLY valid JSON.'
+Output ONLY valid JSON array with detailed tiles. No markdown. No explanation. No wrapping object.`,
+            'You are a senior Freshworks API engineer. You know every endpoint from developers.freshdesk.com, api.freshservice.com, developers.freshsales.io. Generate comprehensive provisioning plans with 10-30 detailed data points per tile. Output ONLY valid JSON.'
         );
 
         if (!result.success) {

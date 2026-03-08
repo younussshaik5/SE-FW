@@ -5,7 +5,90 @@
 import GeminiService from '../services/geminiService.js';
 
 const ValueArchitecture = {
+    // Cost database for common tools
+    costDatabase: {
+        'Zendesk Enterprise': { annualCost: 270000, category: 'Helpdesk' },
+        'Zendesk Professional': { annualCost: 150000, category: 'Helpdesk' },
+        'Salesforce Service Cloud': { annualCost: 300000, category: 'CRM' },
+        'Salesforce Sales Cloud': { annualCost: 250000, category: 'CRM' },
+        'ServiceNow CSM': { annualCost: 350000, category: 'CSM' },
+        'ServiceNow ITSM': { annualCost: 320000, category: 'ITSM' },
+        'Intercom': { annualCost: 48000, category: 'Messaging' },
+        'HubSpot Service Hub': { annualCost: 120000, category: 'CRM' },
+        'Talkdesk': { annualCost: 84000, category: 'Contact Center' },
+        'Genesys Cloud CX': { annualCost: 200000, category: 'Contact Center' },
+        'Five9': { annualCost: 180000, category: 'Contact Center' },
+        'Freshdesk Enterprise': { annualCost: 150000, category: 'Helpdesk' },
+        'Freshservice': { annualCost: 120000, category: 'ITSM' },
+        'Freshsales Suite': { annualCost: 90000, category: 'CRM' }
+    },
+
+    // Load cost database from localStorage or use defaults
+    loadCostDatabase() {
+        const stored = localStorage.getItem('costDatabase');
+        if (stored) {
+            try {
+                this.costDatabase = JSON.parse(stored);
+            } catch (e) {
+                console.error('Failed to load cost database:', e);
+            }
+        }
+    },
+
+    // Save cost database to localStorage
+    saveCostDatabase() {
+        localStorage.setItem('costDatabase', JSON.stringify(this.costDatabase));
+    },
+
+    // Add tool to cost database
+    addToolToDatabase(name, annualCost, category) {
+        this.costDatabase[name] = { annualCost: parseInt(annualCost), category: category };
+        this.saveCostDatabase();
+    },
+
+    // Get tool suggestions based on input
+    getToolSuggestions(input) {
+        if (!input || input.length < 2) return [];
+        const lowerInput = input.toLowerCase();
+        return Object.keys(this.costDatabase)
+            .filter(tool => tool.toLowerCase().includes(lowerInput))
+            .slice(0, 5);
+    },
+
+    // Auto-fill costs based on selected tools
+    autoFillCosts() {
+        const toolsText = document.getElementById('roi-current-tools').value;
+        const lines = toolsText.split('\n');
+        let totalCost = 0;
+        let updatedText = '';
+
+        lines.forEach(line => {
+            if (line.trim()) {
+                // Try to match tool name with database
+                let matched = false;
+                for (const [toolName, data] of Object.entries(this.costDatabase)) {
+                    if (line.toLowerCase().includes(toolName.toLowerCase())) {
+                        // Replace with database cost
+                        updatedText += `${toolName}: $${data.annualCost.toLocaleString()}/yr\n`;
+                        totalCost += data.annualCost;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    updatedText += line + '\n';
+                }
+            }
+        });
+
+        document.getElementById('roi-current-tools').value = updatedText.trim();
+        window.App.showToast(`Auto-filled costs for tools. Total: $${totalCost.toLocaleString()}/yr`, 'success');
+    },
+
     render() {
+        // Load cost database on render
+        this.loadCostDatabase();
+
         return `
         <div class="module-page">
             <div class="module-header">
@@ -31,6 +114,9 @@ const ValueArchitecture = {
 e.g., Zendesk Enterprise: $270,000/yr
 Talkdesk: $84,000/yr
 Intercom: $48,000/yr"></textarea>
+                        <div style="margin-top:var(--space-2);">
+                            <button class="btn btn-sm btn-secondary" onclick="ValueArchitecture.autoFillCosts()">🔍 Auto-fill from Database</button>
+                        </div>
                     </div>
                     <div class="form-group" style="margin-bottom:var(--space-4)">
                         <label class="form-label">Average Labor Burden Rate ($/hr)</label>
@@ -110,7 +196,7 @@ e.g., Onboarding latency is 8 weeks, Q4 SLA misses caused $180K in churn"></text
             }
         }
 
-        const prompt = `Generate a 3-Year Value Architecture / ROI-TCO report for:
+        const prompt = `Generate a Comprehensive 3-Year Value Architecture / ROI-TCO Report with 10-30 detailed points per section for:
 Company: ${data.company}
 Agents: ${data.agents}
 Current Tools & Costs: ${data.currentTools}
@@ -121,21 +207,98 @@ Context: ${data.context}
 
 Analyze any attached contracts or usage reports for more accurate cost modeling.
 
-Include:
-1. Current State cost table (Markdown table format)
-2. Proposed Freshworks cost table — 3-year (Markdown table format)
-3. Headcount avoidance model (Markdown table format)
-4. Direct labor savings calculation
-5. 3-Year value summary table:
-| Metric | Year 1 | Year 2 | Year 3 | Total |
-| --- | --- | --- | --- | --- |
-| Direct Savings | ... | ... | ... | ... |
-| Labor Savings | ... | ... | ... | ... |
-| Total Value | ... | ... | ... | ... |
-6. Year 1 ROI % and Payback Period
-7. CFO recommendation paragraph
+**Required output structure with 10-30 detailed points per section:**
 
-Present ALL financial data in Markdown tables. Use real math based on inputs. Cite Freshworks pricing from official sources.`;
+## Executive Summary (10-15 points)
+- **Total 3-Year Value:** (detailed calculation)
+- **Year 1 ROI:** (percentage with breakdown)
+- **Payback Period:** (months with calculation)
+- **Net Present Value (NPV):** (calculation with assumptions)
+- **Internal Rate of Return (IRR):** (percentage)
+- **Key Value Drivers:** (5-7 points)
+- **CFO Recommendation:** (detailed 3-5 points)
+
+## Current State Analysis (15-20 points)
+| Tool/Category | Annual Cost | Monthly Cost | Users | Cost per User | Notes |
+| --- | --- | --- | --- | --- | --- |
+(Current tools breakdown with 10-15 detailed line items)
+
+### Current State Pain Points (10-15 points)
+| Pain Point | Business Impact | Annual Cost Impact | Evidence Source |
+| --- | --- | --- | --- |
+(5-7 pain points with detailed cost impact analysis)
+
+## Proposed Freshworks Solution (15-20 points)
+| Product | Plan | Users | Monthly Cost | Annual Cost | 3-Year Cost |
+| --- | --- | --- | --- | --- | --- |
+(Freshworks cost breakdown with 10-15 detailed line items)
+
+### Implementation Costs (10-15 points)
+| Cost Category | Amount | Timeline | Notes |
+| --- | --- | --- | --- |
+(5-7 implementation cost categories with detailed breakdown)
+
+## Headcount Avoidance Model (15-20 points)
+| Role | Current FTEs | Proposed FTEs | Avoidance | Annual Savings | 3-Year Savings |
+| --- | --- | --- | --- | --- | --- |
+(10-15 roles with detailed headcount analysis)
+
+### Labor Savings Calculation (10-15 points)
+| Activity | Current Hours | Proposed Hours | Savings | Hourly Rate | Annual Savings |
+| --- | --- | --- | --- | --- | --- |
+(5-7 activities with detailed labor savings calculation)
+
+## Direct Savings Analysis (15-20 points)
+| Savings Category | Year 1 | Year 2 | Year 3 | Total | Calculation Basis |
+| --- | --- | --- | --- | --- | --- |
+(10-15 savings categories with detailed calculations)
+
+## Indirect Benefits (10-15 points)
+| Benefit Category | Description | Estimated Value | Confidence Level | Evidence |
+| --- | --- | --- | --- | --- |
+(5-7 indirect benefits with detailed value estimation)
+
+## 3-Year Value Summary (15-20 points)
+| Metric | Year 1 | Year 2 | Year 3 | Total | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Direct Savings | ... | ... | ... | ... | ... |
+| Labor Savings | ... | ... | ... | ... | ... |
+| Headcount Avoidance | ... | ... | ... | ... | ... |
+| Implementation Costs | ... | ... | ... | ... | ... |
+| Total Value | ... | ... | ... | ... | ... |
+| Net Value | ... | ... | ... | ... | ... |
+(Detailed 3-year financial model with 10-15 metrics)
+
+## ROI Analysis (10-15 points)
+| Metric | Year 1 | Year 2 | Year 3 | Notes |
+| --- | --- | --- | --- | --- |
+| ROI % | ... | ... | ... | ... |
+| Payback Period | ... | ... | ... | ... |
+| NPV | ... | ... | ... | ... |
+| IRR | ... | ... | ... | ... |
+| Break-even Point | ... | ... | ... | ... |
+(Detailed ROI calculations with 5-7 metrics)
+
+## Risk-Adjusted Value (10-15 points)
+| Risk Factor | Probability | Impact | Adjusted Value | Mitigation |
+| --- | --- | --- | --- | --- |
+(5-7 risk factors with detailed risk-adjusted value calculation)
+
+## Sensitivity Analysis (10-15 points)
+| Scenario | Assumption Change | ROI Impact | NPV Impact | Recommendation |
+| --- | --- | --- | --- | --- |
+(5-7 scenarios with detailed sensitivity analysis)
+
+## CFO Recommendation (10-15 points)
+- **Recommendation:** [Approve / Approve with Conditions / Reject]
+- **Rationale:** (5-7 detailed points)
+- **Key Assumptions:** (3-5 points)
+- **Next Steps:** (3-5 points)
+- **Timeline:** (3-5 points)
+- **Risk Mitigation:** (3-5 points)
+
+Present ALL financial data in Markdown tables. Use real math based on inputs. Cite Freshworks pricing from official sources.
+Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`;
 
         const result = await GeminiService.generateContent(prompt, 'You are a value engineering expert creating CFO-level business cases.', attachments);
 

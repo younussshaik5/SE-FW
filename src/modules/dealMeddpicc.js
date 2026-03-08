@@ -5,6 +5,88 @@
 import GeminiService from '../services/geminiService.js';
 
 const DealMeddpicc = {
+    // Fetch deals from Freshworks CRM
+    async fetchDealsFromCRM() {
+        if (!FreshworksService.isConnected()) {
+            window.App.showToast('Configure Freshworks credentials in Settings first', 'warning');
+            return;
+        }
+
+        const resultEl = document.getElementById('meddpicc-result');
+        resultEl.innerHTML = '<div class="loading-shimmer" style="height:200px"></div>';
+
+        try {
+            const result = await FreshworksService.getDeals(1);
+
+            if (!result.success) {
+                resultEl.innerHTML = `
+                    <div class="error-container" style="padding:var(--space-4);">
+                        <strong>❌ Failed to fetch deals</strong><br>
+                        <span style="color:var(--text-secondary);">${result.error}</span>
+                    </div>
+                `;
+                return;
+            }
+
+            const deals = result.data.deals || result.data || [];
+
+            if (deals.length === 0) {
+                resultEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><h3>No deals found</h3><p>Connect to Freshworks CRM to fetch deal data.</p></div>';
+                return;
+            }
+
+            // Populate the form with the first deal
+            const deal = deals[0];
+            document.getElementById('meddpicc-deal').value = deal.name || '';
+            document.getElementById('meddpicc-value').value = deal.amount ? `$${deal.amount}` : '';
+
+            // Generate context from deal data
+            let context = `Deal ID: ${deal.id || 'N/A'}\n`;
+            if (deal.stage) context += `Stage: ${deal.stage}\n`;
+            if (deal.probability) context += `Probability: ${deal.probability}%\n`;
+            if (deal.expected_close) context += `Expected Close: ${deal.expected_close}\n`;
+            if (deal.customer_id) context += `Customer ID: ${deal.customer_id}\n`;
+
+            document.getElementById('meddpicc-notes').value = context;
+
+            // Show deal list
+            let html = '<div style="padding:var(--space-4);"><h3>📊 Deals from CRM</h3><p style="color:var(--text-secondary); margin-bottom:var(--space-3);">Selected first deal and populated form. Here are other available deals:</p>';
+            html += '<div style="max-height:300px; overflow-y:auto;">';
+            deals.slice(0, 10).forEach(d => {
+                html += `<div style="padding:var(--space-2); border-bottom:1px solid var(--border-muted); cursor:pointer;" onclick="DealMeddpicc.selectDeal(${JSON.stringify(d).replace(/"/g, '&quot;')})">`;
+                html += `<strong>${d.name || 'Untitled'}</strong> - ${d.amount ? '$' + d.amount : 'No amount'} - ${d.stage || 'No stage'}`;
+                html += `</div>`;
+            });
+            html += '</div></div>';
+
+            resultEl.innerHTML = html;
+            window.App.showToast(`Fetched ${deals.length} deals from CRM`, 'success');
+
+        } catch (error) {
+            resultEl.innerHTML = `
+                <div class="error-container" style="padding:var(--space-4);">
+                    <strong>❌ Error fetching deals</strong><br>
+                    <span style="color:var(--text-secondary);">${error.message}</span>
+                </div>
+            `;
+        }
+    },
+
+    // Select a deal from the list
+    selectDeal(deal) {
+        document.getElementById('meddpicc-deal').value = deal.name || '';
+        document.getElementById('meddpicc-value').value = deal.amount ? `$${deal.amount}` : '';
+
+        let context = `Deal ID: ${deal.id || 'N/A'}\n`;
+        if (deal.stage) context += `Stage: ${deal.stage}\n`;
+        if (deal.probability) context += `Probability: ${deal.probability}%\n`;
+        if (deal.expected_close) context += `Expected Close: ${deal.expected_close}\n`;
+        if (deal.customer_id) context += `Customer ID: ${deal.customer_id}\n`;
+
+        document.getElementById('meddpicc-notes').value = context;
+        window.App.showToast(`Selected: ${deal.name}`, 'success');
+    },
+
     render() {
         return `
         <div class="module-page">
@@ -40,9 +122,14 @@ Include details about:
                          <label class="form-label">Attachments (Account Plan, Org Chart)</label>
                          <input type="file" id="meddpicc-file" class="form-input" multiple />
                     </div>
-                    <button class="btn btn-primary btn-lg" onclick="DealMeddpicc.analyze()" style="width:100%">
-                        📊 Analyze Deal
-                    </button>
+                    <div style="display:flex; gap:var(--space-3);">
+                        <button class="btn btn-primary btn-lg" onclick="DealMeddpicc.analyze()" style="flex:1">
+                            📊 Analyze Deal
+                        </button>
+                        <button class="btn btn-secondary btn-lg" onclick="DealMeddpicc.fetchDealsFromCRM()">
+                            🔄 Fetch from CRM
+                        </button>
+                    </div>
                 </div>
 
                 <div class="glass-card module-panel">
@@ -88,7 +175,7 @@ Include details about:
             }
         }
 
-        const prompt = `Perform a MEDDPICC analysis for this deal:
+        const prompt = `Perform a Comprehensive MEDDPICC Analysis for this deal with 10-30 detailed points per section:
 
 Deal: ${deal} | Value: ${value}
 
@@ -97,35 +184,131 @@ ${notes}
 
 Analyze any attached account plans or org charts.
 
-**Required output structure:**
+**Required output structure with 10-30 detailed points per section:**
 
-## MEDDPICC Scorecard
-| Dimension | Score /10 | Indicator | Key Finding |
-| --- | --- | --- | --- |
-| **M**etrics | X/10 | 🟢/🟡/🔴 | ... |
-| **E**conomic Buyer | X/10 | 🟢/🟡/🔴 | ... |
-| **D**ecision Criteria | X/10 | 🟢/🟡/🔴 | ... |
-| **D**ecision Process | X/10 | 🟢/🟡/🔴 | ... |
-| **I**dentify Pain | X/10 | 🟢/🟡/🔴 | ... |
-| **P**aper Process | X/10 | 🟢/🟡/🔴 | ... |
-| **I**mplicate Pain | X/10 | 🟢/🟡/🔴 | ... |
-| **C**hampion | X/10 | 🟢/🟡/🔴 | ... |
-(Use 🟢 7-10, 🟡 4-6, 🔴 1-3)
-
-## Detailed Assessment
-For each dimension scoring below 7, provide:
-- **Assessment:** What we know
-- **Gap:** What's missing
-- **Action:** Specific next step to improve the score
-
-## Deal Health Summary
-- **Overall Score:** X/100
+## Executive Summary (10-15 points)
+- **Deal Health Score:** X/100 (with detailed breakdown)
 - **Risk Level:** [🔴 HIGH / 🟡 MEDIUM / 🟢 LOW]
+- **Win Probability:** (percentage with rationale)
+- **Critical Success Factors:** (5-7 points)
+- **Top 3 Priority Actions:** (detailed 3-5 points each)
+- **Timeline Risk:** (3-5 points)
+- **Resource Requirements:** (3-5 points)
 
-## Top 3 Priority Actions
-| Priority | Action | Urgency | Owner |
-| --- | --- | --- | --- |
-| 1 | ... | 🔴/🟡 | SE/AE |`;
+## MEDDPICC Scorecard (15-20 points)
+| Dimension | Score /10 | Indicator | Key Finding | Evidence | Gap Analysis | Recommended Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| **M**etrics | X/10 | 🟢/🟡/🔴 | ... | ... | ... | ... |
+| **E**conomic Buyer | X/10 | 🟢/🟡/🔴 | ... | ... | ... | ... |
+| **D**ecision Criteria | X/10 | 🟢/🟡/🔴 | ... | ... | ... | ... |
+| **D**ecision Process | X/10 | 🟢/🟡/🔴 | ... | ... | ... | ... |
+| **I**dentify Pain | X/10 | 🟢/🟡/🔴 | ... | ... | ... | ... |
+| **P**aper Process | X/10 | 🟢/🟡/🔴 | ... | ... | ... | ... |
+| **I**mplicate Pain | X/10 | 🟢/🟡/🔴 | ... | ... | ... | ... |
+| **C**hampion | X/10 | 🟢/🟡/🔴 | ... | ... | ... | ... |
+(Use 🟢 7-10, 🟡 4-6, 🔴 1-3)
+(8 dimensions with detailed scoring, evidence, gap analysis, and recommended actions)
+
+## Detailed Assessment by Dimension (40-50 points)
+
+### M - Metrics (5-7 points)
+- **Current Metrics:** (3-5 points)
+- **Target Metrics:** (3-5 points)
+- **Gap Analysis:** (3-5 points)
+- **Evidence:** (2-3 points)
+- **Recommended Actions:** (3-5 points)
+
+### E - Economic Buyer (5-7 points)
+- **Identified Economic Buyer:** (3-5 points)
+- **Authority Level:** (2-3 points)
+- **Budget Ownership:** (2-3 points)
+- **Relationship Strength:** (2-3 points)
+- **Gap Analysis:** (2-3 points)
+- **Recommended Actions:** (3-5 points)
+
+### D - Decision Criteria (5-7 points)
+- **Identified Criteria:** (3-5 points)
+- **Weighting:** (2-3 points)
+- **Our Position:** (2-3 points)
+- **Competitor Position:** (2-3 points)
+- **Gap Analysis:** (2-3 points)
+- **Recommended Actions:** (3-5 points)
+
+### D - Decision Process (5-7 points)
+- **Process Steps:** (3-5 points)
+- **Timeline:** (2-3 points)
+- **Key Milestones:** (2-3 points)
+- **Stakeholders:** (2-3 points)
+- **Gap Analysis:** (2-3 points)
+- **Recommended Actions:** (3-5 points)
+
+### I - Identify Pain (5-7 points)
+- **Identified Pains:** (3-5 points)
+- **Business Impact:** (2-3 points)
+- **Urgency:** (2-3 points)
+- **Evidence:** (2-3 points)
+- **Gap Analysis:** (2-3 points)
+- **Recommended Actions:** (3-5 points)
+
+### P - Paper Process (5-7 points)
+- **Required Documents:** (3-5 points)
+- **Approval Process:** (2-3 points)
+- **Legal Review:** (2-3 points)
+- **Timeline:** (2-3 points)
+- **Gap Analysis:** (2-3 points)
+- **Recommended Actions:** (3-5 points)
+
+### I - Implicate Pain (5-7 points)
+- **Implication Strategy:** (3-5 points)
+- **Stakeholder Impact:** (2-3 points)
+- **Urgency Creation:** (2-3 points)
+- **Evidence:** (2-3 points)
+- **Gap Analysis:** (2-3 points)
+- **Recommended Actions:** (3-5 points)
+
+### C - Champion (5-7 points)
+- **Champion Identification:** (3-5 points)
+- **Influence Level:** (2-3 points)
+- **Relationship Strength:** (2-3 points)
+- **Motivation:** (2-3 points)
+- **Gap Analysis:** (2-3 points)
+- **Recommended Actions:** (3-5 points)
+
+## Stakeholder Analysis (10-15 points)
+| Stakeholder | Role | Influence | Engagement Level | Risk Level | Mitigation Strategy |
+| --- | --- | --- | --- | --- | --- |
+(5-7 stakeholders with detailed analysis)
+
+## Competitive Landscape (10-15 points)
+| Competitor | Strengths | Weaknesses | Our Advantage | Strategy |
+| --- | --- | --- | --- | --- |
+(3-5 competitors with detailed analysis)
+
+## Risk Assessment (10-15 points)
+| Risk Category | Specific Risk | Probability | Impact | Mitigation Strategy | Contingency Plan |
+| --- | --- | --- | --- | --- | --- |
+(5-7 risk categories with detailed analysis)
+
+## Timeline & Milestones (10-15 points)
+| Milestone | Date | Owner | Status | Dependencies | Risk |
+| --- | --- | --- | --- | --- | --- |
+(5-7 milestones with detailed tracking)
+
+## Deal Health Summary (10-15 points)
+- **Overall Score:** X/100 (with detailed breakdown)
+- **Risk Level:** [🔴 HIGH / 🟡 MEDIUM / 🟢 LOW]
+- **Win Probability:** (percentage with rationale)
+- **Critical Success Factors:** (5-7 points)
+- **Top 10 Priority Actions** (numbered list with 3-5 points each)
+- **Timeline Impact:** (3-5 points)
+- **Resource Impact:** (3-5 points)
+
+## Next Steps (10-15 points)
+| Action | Owner | Due Date | Status | Dependencies |
+| --- | --- | --- | --- | --- |
+(5-7 next steps with detailed tracking)
+
+Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`;
 
         const result = await GeminiService.generateContent(prompt, 'You are a MEDDPICC methodology expert evaluating enterprise technology deals.', attachments);
 

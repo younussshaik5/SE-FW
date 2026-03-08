@@ -76,22 +76,60 @@ const EmailAssist = {
             }
         }
 
-        const prompt = `Draft a ${tone} email (${type}) for a Freshworks SE.
-        
+        const prompt = `Draft a Comprehensive Professional Email with 10-30 Detailed Points:
+
+Email Type: ${type}
+Tone: ${tone}
+Context/Thread: "${context}"
+Key Points to Cover: ${points}
+
+**Required output structure with 10-30 detailed points:**
+
+## Email Structure (10-15 points)
+- **Subject Line:** (3-5 options with rationale)
+- **Opening:** (3-5 points)
+- **Body Sections:** (5-7 points)
+- **Closing:** (3-5 points)
+- **Call to Action:** (2-3 points)
+
+## Content Details (15-20 points)
+| Section | Content | Purpose | Tone | Key Phrases |
+| --- | --- | --- | --- | --- |
+(5-7 sections with detailed content, purpose, tone, and key phrases)
+
+## Key Points Integration (10-15 points)
+| Point | Integration Method | Placement | Supporting Details |
+| --- | --- | --- | --- |
+(5-7 key points with detailed integration strategy)
+
+## Tone & Style (10-15 points)
+| Element | Specification | Example | Rationale |
+| --- | --- | --- | --- |
+(5-7 tone/style elements with detailed specifications)
+
+## Follow-up Strategy (10-15 points)
+| Follow-up Action | Timeline | Expected Response | Next Steps |
+| --- | --- | --- | --- |
+(3-5 follow-up actions with detailed strategy)
+
+## Alternative Versions (10-15 points)
+| Version | Tone | Use Case | Key Differences |
+| --- | --- | --- | --- |
+(2-3 alternative versions with detailed comparisons)
+
+Draft the actual email content with all these elements integrated professionally.
+
 Context/Thread:
 "${context}"
 
 Key Points to Cover:
 ${points}
 
-Requirements:
-- Subject line included
-- Clear structure
-- Professional closing`;
+Ensure the email is professional, clear, and addresses all requirements with 10-30 detailed points of content.`;
 
         const result = await GeminiService.generateContent(
             prompt,
-            'You are a Freshworks Solution Engineer writing professional, technical emails.',
+            'You are a Freshworks Solution Engineer writing professional, technical emails with comprehensive detail.',
             attachments
         );
 

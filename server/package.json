@@ -1,6 +1,7 @@
 {
     "name": "se-workstation-proxy",
     "version": "1.0.0",
+    "type": "module",
     "description": "Simple proxy server for SE Workstation to bypass CORS",
     "main": "index.js",
     "scripts": {

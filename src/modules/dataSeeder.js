@@ -8,6 +8,101 @@ import FreshworksService from '../services/freshworksService.js';
 const DataSeeder = {
     generatedData: null,
 
+    // Validation rules for different data types
+    validationRules: {
+        tickets: {
+            required: ['subject', 'description', 'priority', 'status'],
+            priority: ['1', '2', '3', '4'],
+            status: ['Open', 'Pending', 'Resolved', 'Closed']
+        },
+        contacts: {
+            required: ['name', 'email'],
+            emailRegex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        },
+        companies: {
+            required: ['name'],
+            nameMinLength: 3
+        }
+    },
+
+    // Validate generated data
+    validateData(data, type) {
+        const rules = this.validationRules[type];
+        if (!rules) return { valid: true, errors: [] };
+
+        const errors = [];
+
+        data.forEach((record, index) => {
+            // Check required fields
+            rules.required.forEach(field => {
+                if (!record[field] || record[field].toString().trim() === '') {
+                    errors.push(`Record ${index + 1}: Missing required field '${field}'`);
+                }
+            });
+
+            // Type-specific validation
+            if (type === 'tickets') {
+                if (record.priority && !rules.priority.includes(record.priority.toString())) {
+                    errors.push(`Record ${index + 1}: Invalid priority '${record.priority}'`);
+                }
+                if (record.status && !rules.status.includes(record.status)) {
+                    errors.push(`Record ${index + 1}: Invalid status '${record.status}'`);
+                }
+            }
+
+            if (type === 'contacts') {
+                if (record.email && !rules.emailRegex.test(record.email)) {
+                    errors.push(`Record ${index + 1}: Invalid email format '${record.email}'`);
+                }
+            }
+
+            if (type === 'companies') {
+                if (record.name && record.name.length < rules.nameMinLength) {
+                    errors.push(`Record ${index + 1}: Company name too short (min ${rules.nameMinLength} chars)`);
+                }
+            }
+        });
+
+        return {
+            valid: errors.length === 0,
+            errors: errors
+        };
+    },
+
+    // Fix common validation issues
+    fixData(data, type) {
+        return data.map(record => {
+            const fixed = { ...record };
+
+            // Fix tickets
+            if (type === 'tickets') {
+                if (!fixed.priority) fixed.priority = '2';
+                if (!fixed.status) fixed.status = 'Open';
+                if (fixed.description && fixed.description.length < 10) {
+                    fixed.description = fixed.description + ' This is a detailed description of the issue with more context and information.';
+                }
+            }
+
+            // Fix contacts
+            if (type === 'contacts') {
+                if (fixed.email && !this.validationRules.contacts.emailRegex.test(fixed.email)) {
+                    // Generate a valid email from name
+                    const namePart = fixed.name ? fixed.name.toLowerCase().replace(/\s+/g, '.') : 'user';
+                    fixed.email = `${namePart}@example.com`;
+                }
+            }
+
+            // Fix companies
+            if (type === 'companies') {
+                if (fixed.name && fixed.name.length < 3) {
+                    fixed.name = fixed.name + ' Corp';
+                }
+            }
+
+            return fixed;
+        });
+    },
+
     render() {
         return `
         <div class="module-page">
@@ -117,16 +212,86 @@ const DataSeeder = {
             }
         }
 
-        const prompt = `Generate ${count} realistic ${type} for a ${industry} company in valid JSON array format. Each record should have appropriate fields for the Freshworks API.
-${scenario ? `Specific scenario: ${scenario}` : ''}
+        const prompt = `Generate an Exhaustive Realistic Dataset for Freshworks Instance with 10-30 Detailed Points per Record:
 
-Use any attached examples or schemas to structure the JSON.
+Industry: ${industry}
+Data Type: ${type}
+Count: ${count}
+Scenario: ${scenario || 'Standard enterprise scenario'}
 
-For tickets, use fields: subject, description, priority (1-4), status (2=open), type, tags (array).
-For contacts, use fields: name, email, phone, company_id, description.
-For companies, use fields: name, domains (array), description, industry.
+**Requirements:**
+1. Generate ${count} highly realistic records with 10-30 detailed data points per record
+2. Ensure diversity in data (names, scenarios, dates, statuses, etc.)
+3. Include all standard fields plus 5+ custom fields per record
+4. Reflect real enterprise complexity with variations
+5. Use industry-specific terminology and scenarios
 
-Return ONLY the JSON array, no other text.`;
+**Schema Requirements with 10-30 Points:**
+
+For Tickets (15-25 points per record):
+- subject (realistic, scenario-specific)
+- description (multi-paragraph, 3-5 paragraphs with details)
+- priority (1-4 with realistic distribution)
+- status (2-5 different statuses across dataset)
+- type (5-7 different types)
+- tags (array, 3-5 tags per ticket)
+- custom_fields (JSON with 5+ fields):
+  - customer_segment (enterprise/mid-market/smb)
+  - product_area (billing/support/technical)
+  - escalation_level (1-5)
+  - sla_breach_risk (high/medium/low)
+  - estimated_resolution_time (hours)
+  - business_impact (revenue/critical/operational)
+  - affected_users (number)
+  - root_cause_category
+  - workaround_available (boolean)
+  - customer_satisfaction_impact (1-10)
+
+For Contacts (10-15 points per record):
+- name (realistic, diverse)
+- email (corporate domain)
+- phone (formatted)
+- company_id (reference)
+- description (background, 2-3 sentences)
+- job_title (role-specific)
+- twitter_id (optional)
+- department (5-7 different departments)
+- location (city, country)
+- timezone
+- language
+- preferred_contact_method
+- last_contact_date
+- lead_score (1-100)
+
+For Companies (12-18 points per record):
+- name (realistic enterprise names)
+- domains (array, 1-3 domains)
+- description (company background, 2-3 sentences)
+- industry (from ${industry})
+- health_score (1-10)
+- renewal_date (future dates)
+- annual_revenue (realistic ranges)
+- employee_count (realistic ranges)
+- website
+- phone
+- address (city, state, country)
+- contract_value (ARR)
+- contract_start_date
+- contract_end_date
+- account_owner
+- tier (enterprise/premium/standard)
+- region (NA/EMEA/APAC)
+- strategic_account (boolean)
+
+**Data Quality Requirements:**
+- 10-30 unique data points per record
+- Realistic variation across all records
+- Industry-specific scenarios and terminology
+- Proper data types (strings, numbers, dates, booleans, arrays)
+- No duplicate records
+- Consistent but diverse patterns
+
+Return ONLY the JSON array, no other text. Ensure perfect JSON syntax with proper escaping.`;
 
         const result = await GeminiService.generateContent(prompt, 'Generate realistic data. Return only valid JSON array.', attachments);
 

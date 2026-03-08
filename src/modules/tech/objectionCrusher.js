@@ -58,8 +58,71 @@ const ObjectionCrusher = {
         }
 
         const result = await GeminiService.generateContent(
-            `Handle this ${type} objection using the Empathy-Proof-Challenger framework:\n"${objection}"\n\nReference any attached competitor documents if available.\n\nFormat:\n**🤝 Empathy**: Acknowledge the concern\n**📊 Proof**: Data and evidence to counter\n**⚡ Challenger**: Reframe the conversation`,
-            'You are a Freshworks competitive sales expert.',
+            `Handle this ${type} objection using the Empathy-Proof-Challenger framework with 10-30 detailed points:
+
+Objection: "${objection}"
+
+**Required output structure with 10-30 detailed points:**
+
+## Executive Summary (10-15 points)
+- **Objection Analysis:** (3-5 points)
+- **Root Cause:** (2-3 points)
+- **Recommended Strategy:** (3-5 points)
+- **Expected Outcome:** (2-3 points)
+
+## Empathy Phase (10-15 points)
+| Empathy Element | Acknowledgment Statement | Validation Technique | Transition Phrase |
+| --- | --- | --- | --- |
+(3-5 empathy elements with detailed statements, validation techniques, and transitions)
+
+### Detailed Empathy Response (5-7 points)
+- **Validation Statements:** (3-5 points)
+- **Active Listening Cues:** (2-3 points)
+- **Emotional Intelligence:** (2-3 points)
+
+## Proof Phase (15-20 points)
+| Proof Category | Evidence | Data Points | Source | Impact |
+| --- | --- | --- | --- | --- |
+(5-7 proof categories with detailed evidence, data, sources, and impact)
+
+### Evidence Details (10-15 points)
+| Evidence Type | Specific Data | Freshworks Advantage | Competitive Comparison | Documentation |
+| --- | --- | --- | --- | --- |
+(5-7 evidence types with detailed analysis)
+
+## Challenger Phase (10-15 points)
+| Challenger Element | Reframing Strategy | Question to Ask | Expected Response | Next Step |
+| --- | --- | --- | --- | --- |
+(3-5 challenger elements with detailed strategies, questions, and next steps)
+
+### Reframing Techniques (5-10 points)
+| Technique | Application | Example | Rationale |
+| --- | --- | --- | --- |
+(3-5 techniques with detailed applications)
+
+## Objection-Specific Strategy (10-15 points)
+| Objection Type | Specific Tactic | Key Messages | Supporting Evidence | Risk Mitigation |
+| --- | --- | --- | --- | --- |
+(5-7 objection-specific tactics with detailed strategies)
+
+## Follow-up Actions (10-15 points)
+| Action | Timeline | Owner | Success Metric | Contingency |
+| --- | --- | --- | --- | --- |
+(5-7 follow-up actions with detailed tracking)
+
+## Alternative Responses (10-15 points)
+| Scenario | Response Strategy | Tone Adjustment | Expected Outcome |
+| --- | --- | --- | --- |
+(3-5 alternative scenarios with detailed responses)
+
+## Competitive Intelligence (10-15 points)
+| Competitor Claim | Freshworks Counter | Evidence | Positioning Strategy |
+| --- | --- | --- | --- |
+(5-7 competitive points with detailed counters)
+
+Reference any attached competitor documents if available.
+Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`,
+            'You are a Freshworks competitive sales expert with comprehensive objection-handling strategies.',
             attachments
         );
 

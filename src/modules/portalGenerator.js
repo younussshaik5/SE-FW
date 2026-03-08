@@ -102,8 +102,125 @@ const PortalGenerator = {
         const history = this.messages.map(m => `${m.role === 'ai' ? 'AI' : 'User'}: ${m.text}`).join('\n');
 
         const result = await GeminiService.generateContent(
-            `You are a customer portal designer. Based on this conversation and attachments:\n${history}\n\nEither ask for more details about the portal design OR if you have enough info, generate the complete HTML/CSS for a customer support portal. If generating code, wrap it in \`\`\`html code blocks.`,
-            'Generate beautiful, responsive customer portal HTML with inline CSS.',
+            `You are a customer portal designer. Based on this conversation and attachments, generate a COMPREHENSIVE customer support portal with 10-30 detailed points per section.
+
+Conversation History:
+${history}
+
+**REQUIRED OUTPUT STRUCTURE WITH 10-30 DETAILED POINTS:**
+
+## Portal Design Specification (10-15 points)
+| Design Element | Specification | Rationale | Implementation Details |
+| --- | --- | --- | --- |
+| Branding | ... | ... | ... |
+| Color Scheme | ... | ... | ... |
+| Typography | ... | ... | ... |
+| Layout Structure | ... | ... | ... |
+| Navigation | ... | ... | ... |
+| User Experience | ... | ... | ... |
+
+## Feature Requirements (15-20 points)
+| Feature | Purpose | User Flow | Technical Implementation |
+| --- | --- | --- | --- |
+| Ticket Submission | ... | ... | ... |
+| Ticket Tracking | ... | ... | ... |
+| Knowledge Base | ... | ... | ... |
+| User Authentication | ... | ... | ... |
+| Profile Management | ... | ... | ... |
+| Notifications | ... | ... | ... |
+| Search Functionality | ... | ... | ... |
+| Mobile Responsiveness | ... | ... | ... |
+
+## Page Structure (10-15 points)
+| Page | Components | Functionality | Data Sources |
+| --- | --- | --- | --- |
+| Home/Landing | ... | ... | ... |
+| Ticket List | ... | ... | ... |
+| Ticket Detail | ... | ... | ... |
+| New Ticket | ... | ... | ... |
+| Knowledge Base | ... | ... | ... |
+| Article View | ... | ... | ... |
+| Profile | ... | ... | ... |
+| Settings | ... | ... | ... |
+
+## UI/UX Design Elements (10-15 points)
+| Element | Style | Interaction | Accessibility |
+| --- | --- | --- | --- |
+| Buttons | ... | ... | ... |
+| Forms | ... | ... | ... |
+| Cards | ... | ... | ... |
+| Modals | ... | ... | ... |
+| Navigation | ... | ... | ... |
+| Loading States | ... | ... | ... |
+| Error States | ... | ... | ... |
+
+## Technical Implementation (10-15 points)
+| Component | Technology | Code Structure | Performance Optimization |
+| --- | --- | --- | --- |
+| HTML Structure | ... | ... | ... |
+| CSS Styling | ... | ... | ... |
+| JavaScript Logic | ... | ... | ... |
+| API Integration | ... | ... | ... |
+| State Management | ... | ... | ... |
+| Error Handling | ... | ... | ... |
+
+## Security & Privacy (10-15 points)
+| Security Aspect | Implementation | Best Practice | Validation |
+| --- | --- | --- | --- |
+| Authentication | ... | ... | ... |
+| Data Protection | ... | ... | ... |
+| Input Validation | ... | ... | ... |
+| Session Management | ... | ... | ... |
+| XSS Prevention | ... | ... | ... |
+
+## Responsive Design (10-15 points)
+| Breakpoint | Layout Adaptation | Component Behavior | Testing Priority |
+| --- | --- | --- | --- |
+| Mobile (320px) | ... | ... | ... |
+| Tablet (768px) | ... | ... | ... |
+| Desktop (1024px) | ... | ... | ... |
+| Large Desktop (1440px) | ... | ... | ... |
+
+## Accessibility (10-15 points)
+| Requirement | Implementation | WCAG Standard | Testing Method |
+| --- | --- | --- | --- |
+| Keyboard Navigation | ... | ... | ... |
+| Screen Reader Support | ... | ... | ... |
+| Color Contrast | ... | ... | ... |
+| Focus Management | ... | ... | ... |
+| ARIA Labels | ... | ... | ... |
+
+## Performance Optimization (10-15 points)
+| Optimization | Implementation | Impact | Measurement |
+| --- | --- | --- | --- |
+| Loading Strategy | ... | ... | ... |
+| Asset Optimization | ... | ... | ... |
+| Caching Strategy | ... | ... | ... |
+| Code Minification | ... | ... | ... |
+
+## Browser Compatibility (10-15 points)
+| Browser | Version Support | Known Issues | Workarounds |
+| --- | --- | --- | --- |
+| Chrome | ... | ... | ... |
+| Firefox | ... | ... | ... |
+| Safari | ... | ... | ... |
+| Edge | ... | ... | ... |
+
+**CODE GENERATION REQUIREMENTS:**
+1. Generate complete, production-ready HTML with inline CSS
+2. Include all JavaScript functionality
+3. Make it responsive and accessible
+4. Use modern CSS (Flexbox, Grid)
+5. Include proper semantic HTML
+6. Add detailed comments explaining each section
+7. Ensure it works standalone (no external dependencies)
+8. Include error handling and loading states
+9. Make it visually appealing with modern design
+10. Include all features from the specification
+
+**OUTPUT FORMAT:**
+Generate the complete HTML code with inline CSS and JavaScript. Wrap it in \`\`\`html code blocks. Include detailed comments throughout the code explaining design decisions and implementation details.`,
+            'Generate beautiful, responsive, accessible customer portal HTML with inline CSS and JavaScript. Include 10-30 detailed points per section with comprehensive implementation details.',
             currentAttachments.map(a => a.data)
         );
 

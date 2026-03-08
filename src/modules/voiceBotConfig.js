@@ -1,9 +1,3 @@
-// ========================================
-// Voice Bot Config (Freshcaller)
-// ========================================
-
-import GeminiService from '../services/geminiService.js';
-
 const VoiceBotConfig = {
     render() {
         return `
@@ -93,7 +87,7 @@ const VoiceBotConfig = {
 
         resultEl.innerHTML = '<div class="loading-shimmer" style="height:400px"></div>';
 
-        const prompt = `Generate a complete Freshcaller (Freshdesk Contact Center) IVR / Voice Bot configuration for:
+        const prompt = `Generate an Exhaustive Freshcaller (Freshdesk Contact Center) IVR / Voice Bot Configuration with 10-30 Detailed Points per Section:
 
 Company: ${company || 'Sample Company'}
 Industry: ${industry}
@@ -102,40 +96,132 @@ Languages: ${langs.join(', ')}
 Business Hours: ${hours || 'Mon-Fri 9am-5pm'}
 Special Requirements: ${special || 'Standard setup'}
 
-**Required output structure with Markdown tables:**
+**REQUIRED OUTPUT STRUCTURE WITH 10-30 DETAILED POINTS:**
 
-## IVR Flow
-| Step | Menu Option | Action | Routing Target |
-| --- | --- | --- | --- |
-| 1 | Welcome | Greeting prompt | Auto-detect language |
-| 2 | Press 1 | ... | ... |
-(Design complete IVR tree)
+## Executive Summary (10-15 points)
+- **Configuration Overview:** (3-5 points)
+- **Key Objectives:** (3-5 points)
+- **Expected Outcomes:** (3-5 points)
+- **Implementation Timeline:** (2-3 points)
 
-## Bot Configuration
-| Setting | Value |
-| --- | --- |
-| Language(s) | ... |
-| Voice | ... |
-| Timeout (sec) | ... |
-| Max Retries | ... |
-| Business Hours | ... |
-| After-Hours Action | ... |
+## 📞 IVR Flow Design (20-25 points)
 
-## Queue Routing Rules
-| Category | Team | Priority | SLA |
-| --- | --- | --- | --- |
-(Map each category to a team)
+### Main Menu Structure (10-15 points)
+| Step | Menu Option | Prompt Text | DTMF | Action | Routing Target | Timeout Handling |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | ... | ... | ... | ... | ... | ... |
+| 2 | ... | ... | ... | ... | ... | ... |
+(Design an exhaustive 15+ step IVR tree with detailed prompts, actions, and routing)
 
-## AI Self-Service Flows
-Conversation flows for common scenarios. Show sample dialogues.
+### Sub-Menu Flows (10-15 points)
+| Category | Sub-Menu Options | Routing Logic | Escalation Path | Fallback Strategy |
+| --- | --- | --- | --- | --- |
+| Billing | ... | ... | ... | ... |
+| Technical Support | ... | ... | ... | ... |
+| Account Management | ... | ... | ... | ... |
+(5-7 categories with detailed sub-menu flows)
 
-## Escalation Paths
-| Trigger | Action | Notes |
-| --- | --- | --- |
+## 🤖 Bot Configuration & NLUs (20-25 points)
 
-Reference official Freshcaller documentation. [Source: Freshcaller Admin Guide]`;
+### Voice Bot Settings (10-15 points)
+| Setting | Value | Description | Impact | Configuration Method |
+| --- | --- | --- | --- | --- |
+| Speech Recognition Language | ... | ... | ... | ... |
+| Confidence Threshold | ... | ... | ... | ... |
+| Fallback Responses | ... | ... | ... | ... |
+| Conversation Timeout | ... | ... | ... | ... |
+(10-15 technical settings with detailed descriptions)
 
-        const result = await GeminiService.generateContent(prompt, 'You are a Freshworks Freshcaller/Contact Center IVR architect. Use Markdown tables for all structured data.');
+### NLU Training Data (10-15 points)
+| Intent | Training Phrases | Entities | Response Template | Confidence Score |
+| --- | --- | --- | --- | --- |
+| Check Balance | ... | ... | ... | ... |
+| Reset Password | ... | ... | ... | ... |
+| Technical Issue | ... | ... | ... | ... |
+(10-15 intents with detailed training data)
+
+## ⚡ Queue Routing & SLA Rules (20-25 points)
+
+### Queue Configuration (10-15 points)
+| Queue Name | Category | Agents | Routing Method | Priority | SLA (sec) |
+| --- | --- | --- | --- | --- | --- |
+| Billing Queue | ... | ... | ... | ... | ... |
+| Technical Queue | ... | ... | ... | ... | ... |
+| VIP Queue | ... | ... | ... | ... | ... |
+(5-7 queues with detailed configuration)
+
+### SLA Rules (10-15 points)
+| Priority Level | Response Time | Resolution Time | Escalation Path | Notification Method |
+| --- | --- | --- | --- | --- |
+| P1 - Critical | ... | ... | ... | ... |
+| P2 - High | ... | ... | ... | ... |
+| P3 - Medium | ... | ... | ... | ... |
+| P4 - Low | ... | ... | ... | ... |
+(4-5 priority levels with detailed SLA rules)
+
+## 🗣️ AI Self-Service Scripting (20-25 points)
+
+### Conversation Flows (10-15 points)
+| Scenario | User Input | Bot Response | Action | Next Step |
+| --- | --- | --- | --- | --- |
+| Password Reset | ... | ... | ... | ... |
+| Order Status | ... | ... | ... | ... |
+| Billing Inquiry | ... | ... | ... | ... |
+(10-15 conversation flows with detailed scripts)
+
+### Voice Prompts (10-15 points)
+| Prompt Type | Text | Tone | Language | Audio File |
+| --- | --- | --- | --- | --- |
+| Welcome Message | ... | ... | ... | ... |
+| Menu Options | ... | ... | ... | ... |
+| Confirmation | ... | ... | ... | ... |
+(5-7 prompt types with detailed scripts)
+
+## 🛡️ Escalation & Failover Logic (20-25 points)
+
+### Escalation Rules (10-15 points)
+| Trigger Condition | Escalation Path | Timeout | Notification | Fallback |
+| --- | --- | --- | --- | --- |
+| No Agent Available | ... | ... | ... | ... |
+| High Priority Call | ... | ... | ... | ... |
+| Customer Request | ... | ... | ... | ... |
+(5-7 escalation rules with detailed logic)
+
+### Failover Strategies (10-15 points)
+| Failure Scenario | Detection Method | Failover Action | Recovery Process | Monitoring |
+| --- | --- | --- | --- | --- |
+| System Outage | ... | ... | ... | ... |
+| Network Issue | ... | ... | ... | ... |
+| Agent Unavailable | ... | ... | ... | ... |
+(3-5 failure scenarios with detailed strategies)
+
+## Business Hours & Holiday Handling (10-15 points)
+| Time Period | IVR Behavior | Queue Status | Message Played | Routing Adjustment |
+| --- | --- | --- | --- | --- |
+| Regular Hours | ... | ... | ... | ... |
+| After Hours | ... | ... | ... | ... |
+| Holidays | ... | ... | ... | ... |
+(3-5 time periods with detailed handling)
+
+## Reporting & Analytics (10-15 points)
+| Metric | Calculation Method | Reporting Frequency | Alert Threshold | Action Required |
+| --- | --- | --- | --- | --- |
+| Call Volume | ... | ... | ... | ... |
+| Average Handle Time | ... | ... | ... | ... |
+| First Call Resolution | ... | ... | ... | ... |
+(5-7 metrics with detailed reporting configuration)
+
+## Integration & Security (10-15 points)
+| Integration Point | Purpose | Authentication | Data Flow | Security Measures |
+| --- | --- | --- | --- | --- |
+| CRM Integration | ... | ... | ... | ... |
+| Payment Gateway | ... | ... | ... | ... |
+| Knowledge Base | ... | ... | ... | ... |
+(3-5 integrations with detailed security configuration)
+
+Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`;
+
+        const result = await GeminiService.generateContent(prompt, 'You are an expert Freshcaller/Contact Center IVR architect. Provide exhaustive designs with 10-30 points per category.');
 
         const badge = window.App.getAiBadge(result);
 

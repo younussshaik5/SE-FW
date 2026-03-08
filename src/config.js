@@ -6,10 +6,10 @@
 window.APP_CONFIG = {
     // 1. OpenRouter API (Primary)
     OPENROUTER_API_KEY: window.ENV?.OPENROUTER_API_KEY || "",
-    OPENROUTER_MODEL: window.ENV?.OPENROUTER_MODEL || "google/gemma-3-27b-it:free",
-    OPENROUTER_MULTIMODAL_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_MODEL || "nvidia/nemotron-nano-12b-v2-vl:free",
-    OPENROUTER_MULTIMODAL_SECONDARY_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || "qwen/qwen3-vl-30b-a3b-instruct",
-    OPENROUTER_MULTIMODAL_TERTIARY_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || "google/gemma-3-27b-it:free",
+    OPENROUTER_MODEL: window.ENV?.OPENROUTER_MODEL || "nvidia/nemotron-nano-12b-v2-vl:free",
+    OPENROUTER_MULTIMODAL_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_MODEL || "arcee-ai/trinity-large-preview:free",
+    OPENROUTER_MULTIMODAL_SECONDARY_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || "google/gemma-3-27b-it:free",
+    OPENROUTER_MULTIMODAL_TERTIARY_MODEL: window.ENV?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || null,
     GOOGLE_AI_KEY: window.ENV?.GOOGLE_AI_KEY || "",
 
     // 2. Proxy Server URL

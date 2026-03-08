@@ -5,6 +5,39 @@
 import GeminiService from '../services/geminiService.js';
 
 const RiskReport = {
+    // Automated risk detection patterns
+    riskPatterns: [
+        { pattern: /ss[oO]|single sign[- ]?on|authentication/i, category: 'Security', severity: 'high', message: 'SSO integration may require additional configuration' },
+        { pattern: /data migrat|migration|import/i, category: 'Data', severity: 'high', message: 'Data migration complexity may impact timeline' },
+        { pattern: /custom integrat|api|webhook/i, category: 'Integration', severity: 'medium', message: 'Custom integrations may require development effort' },
+        { pattern: /legacy|old system|outdated/i, category: 'Technical Debt', severity: 'medium', message: 'Legacy systems may complicate migration' },
+        { pattern: /compliance|gdpr|hipaa|soc2/i, category: 'Compliance', severity: 'high', message: 'Compliance requirements may impact configuration' },
+        { pattern: /budget|cost|price|expensive/i, category: 'Financial', severity: 'medium', message: 'Budget constraints may limit scope' },
+        { pattern: /timeline|deadline|urgent|rush/i, category: 'Timeline', severity: 'high', message: 'Tight timeline may require phased approach' },
+        { pattern: /stakeholder|champion|decision maker/i, category: 'Stakeholder', severity: 'medium', message: 'Stakeholder alignment may be needed' },
+        { pattern: /integration|connect|sync/i, category: 'Integration', severity: 'medium', message: 'Integration complexity may be underestimated' },
+        { pattern: /training|adoption|change management/i, category: 'Adoption', severity: 'low', message: 'User training and adoption may be challenging' }
+    ],
+
+    // Analyze text for potential risks
+    analyzeRisks(text) {
+        const risks = [];
+        if (!text) return risks;
+
+        this.riskPatterns.forEach(pattern => {
+            if (pattern.pattern.test(text)) {
+                risks.push({
+                    category: pattern.category,
+                    severity: pattern.severity,
+                    message: pattern.message,
+                    evidence: text.match(pattern.pattern)?.[0] || ''
+                });
+            }
+        });
+
+        return risks;
+    },
+
     render() {
         return `
         <div class="module-page">
@@ -60,9 +93,14 @@ e.g., Looker integration not natively supported, SSO blocked on customer IT, Dat
                          <label class="form-label">Attachments (Architecture Diagrams, RFPs)</label>
                          <input type="file" id="risk-display-file" class="form-input" multiple />
                     </div>
-                    <button class="btn btn-primary btn-lg" onclick="RiskReport.generateReport()" style="width:100%">
-                        ⚠️ Generate Risk Report
-                    </button>
+                    <div style="display:flex; gap:var(--space-3);">
+                        <button class="btn btn-primary btn-lg" onclick="RiskReport.generateReport()" style="flex:1">
+                            ⚠️ Generate Risk Report
+                        </button>
+                        <button class="btn btn-secondary btn-lg" onclick="RiskReport.analyzeRisksUI()" style="flex:1">
+                            🔍 Auto-Detect Risks
+                        </button>
+                    </div>
                 </div>
 
                 <div class="glass-card module-panel">
@@ -99,6 +137,13 @@ e.g., Looker integration not natively supported, SSO blocked on customer IT, Dat
             gaps: document.getElementById('risk-gaps').value
         };
 
+        // Auto-detect risks from input
+        const allText = `${data.useCases}\n${data.steps}\n${data.gaps}`;
+        const autoDetectedRisks = this.analyzeRisks(allText);
+        const autoRisksText = autoDetectedRisks.length > 0
+            ? `\n\n**Automatically Detected Risks:**\n${autoDetectedRisks.map(r => `- [${r.severity.toUpperCase()}] ${r.message}`).join('\n')}`
+            : '';
+
         const resultEl = document.getElementById('risk-result');
         resultEl.innerHTML = '<div class="loading-shimmer" style="height:300px"></div>';
 
@@ -110,37 +155,92 @@ e.g., Looker integration not natively supported, SSO blocked on customer IT, Dat
             }
         }
 
-        const prompt = `Generate a Technical Risk Assessment Report.
+        const prompt = `Generate a Comprehensive Technical Risk Assessment Report with 10-30 detailed points per section.
 
 **Header:**
 - Customer: ${data.customer}
 - SE: ${data.initials} | Date: ${new Date().toLocaleDateString()}
 - Deal Stage: ${data.stage} | Revenue: ${data.revenue}
 
-**Required output structure:**
+**Automatically Detected Risks:**${autoRisksText}
 
-## Use Case Status
-| Use Case | Status | Notes |
-| --- | --- | --- |
-(Use ✅ Validated, ⏳ In Progress, ❌ Gap/Blocked)
+**Required output structure with 10-30 detailed points per section:**
 
-## SE Activity Timeline
-| Activity | Date/Status | Outcome |
-| --- | --- | --- |
-(List all SE steps: ${data.steps})
-
-## Gap Analysis
-| Gap | Impact (🔴 High / 🟡 Med / 🟢 Low) | Current Status | Mitigation Strategy |
-| --- | --- | --- | --- |
-(Analyze: ${data.gaps})
-
-## Overall Risk Assessment
+## Executive Summary (10-15 points)
 - **Risk Level:** [🔴 HIGH / 🟡 MEDIUM / 🟢 LOW]
-- **Rationale:** (1-2 sentences)
-- **Top 3 Priority Actions** (numbered list)
+- **Deal Health Score:** (1-10 scale with rationale)
+- **Top 3 Priority Actions** (detailed 3-5 points each)
+- **Critical Blockers:** (3-5 points)
+- **Recommended Next Steps:** (5-7 points)
+- **Timeline Risk:** (3-5 points)
+- **Resource Requirements:** (3-5 points)
+
+## Use Case Status (15-20 points)
+| Use Case | Status | Validation Level | Evidence | Risk Score | Mitigation Needed | Owner | Timeline |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+(Use ✅ Validated, ⏳ In Progress, ❌ Gap/Blocked, ⚠️ At Risk)
+(10-15 use cases with detailed status, validation evidence, risk scores, and mitigation plans)
+
+## SE Activity Timeline (10-15 points)
+| Activity | Date/Status | Outcome | Evidence | Next Action | Risk Identified |
+| --- | --- | --- | --- | --- | --- |
+(List all SE steps: ${data.steps})
+(10-15 activities with detailed outcomes, evidence, and risk flags)
+
+## Gap Analysis (20-25 points)
+| Gap | Impact (🔴 High / 🟡 Med / 🟢 Low) | Current Status | Mitigation Strategy | Effort | Timeline | Dependencies | Risk Owner |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+(Analyze: ${data.gaps})
+(10-15 gaps with detailed impact analysis, mitigation strategies, effort estimates, timelines, dependencies, and ownership)
+
+## Technical Risk Matrix (15-20 points)
+| Risk Category | Specific Risk | Probability | Impact | Risk Score | Mitigation Plan | Contingency | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+(5-7 risk categories with 2-3 specific risks each, detailed mitigation and contingency plans)
+
+## Integration & Architecture Risks (10-15 points)
+| Integration Point | Complexity | Current State | Required State | Gap | Risk Level | Mitigation |
+| --- | --- | --- | --- | --- | --- | --- |
+(5-7 integration points with detailed complexity analysis, gaps, and mitigation)
+
+## Data Migration Risks (10-15 points)
+| Data Type | Volume | Complexity | Current State | Required State | Risk Level | Mitigation |
+| --- | --- | --- | --- | --- | --- | --- |
+(5-7 data types with detailed migration analysis)
+
+## Security & Compliance Risks (10-15 points)
+| Requirement | Current State | Required State | Gap | Risk Level | Mitigation | Compliance Impact |
+| --- | --- | --- | --- | --- | --- | --- |
+(5-7 security/compliance requirements with detailed gap analysis)
+
+## Performance & Scalability Risks (10-15 points)
+| Metric | Current State | Required State | Gap | Risk Level | Mitigation | Validation Plan |
+| --- | --- | --- | --- | --- | --- | --- |
+(5-7 performance metrics with detailed analysis)
+
+## Stakeholder & Timeline Risks (10-15 points)
+| Stakeholder | Role | Influence | Engagement Level | Risk Level | Mitigation Strategy |
+| --- | --- | --- | --- | --- | --- |
+(5-7 stakeholders with detailed engagement analysis and risk mitigation)
+
+## Budget & Resource Risks (10-15 points)
+| Resource Type | Required | Available | Gap | Risk Level | Mitigation Strategy |
+| --- | --- | --- | --- | --- | --- |
+(5-7 resource types with detailed gap analysis)
+
+## Overall Risk Assessment (10-15 points)
+- **Risk Level:** [🔴 HIGH / 🟡 MEDIUM / 🟢 LOW]
+- **Risk Score:** (1-100 scale with breakdown)
+- **Rationale:** (5-7 detailed points)
+- **Top 10 Priority Actions** (numbered list with 3-5 points each)
+- **Timeline Impact:** (3-5 points)
+- **Budget Impact:** (3-5 points)
+- **Resource Impact:** (3-5 points)
+- **Go/No-Go Recommendation:** (with 5-7 supporting points)
 
 Use Cases: ${data.useCases}
-Reference any attached diagrams or documents for deeper risk analysis.`;
+Reference any attached diagrams or documents for deeper risk analysis.
+Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`;
 
         const result = await GeminiService.generateContent(prompt, 'You are a senior SE manager creating structured deal risk reports.', attachments);
 
@@ -159,6 +259,63 @@ Reference any attached diagrams or documents for deeper risk analysis.`;
                 </div>
             `;
         }
+    },
+
+    analyzeRisksUI() {
+        const useCases = document.getElementById('risk-usecases').value;
+        const steps = document.getElementById('risk-steps').value;
+        const gaps = document.getElementById('risk-gaps').value;
+        const resultEl = document.getElementById('risk-result');
+
+        // Analyze all text fields for risks
+        const allText = `${useCases}\n${steps}\n${gaps}`;
+        const detectedRisks = this.analyzeRisks(allText);
+
+        if (detectedRisks.length === 0) {
+            window.App.showToast('No automated risks detected', 'success');
+            return;
+        }
+
+        // Group risks by category
+        const risksByCategory = {};
+        detectedRisks.forEach(risk => {
+            if (!risksByCategory[risk.category]) {
+                risksByCategory[risk.category] = [];
+            }
+            risksByCategory[risk.category].push(risk);
+        });
+
+        // Generate HTML for detected risks
+        let risksHtml = '<div style="padding:var(--space-4);">';
+        risksHtml += '<h3 style="margin-bottom:var(--space-3);">🔍 Automated Risk Detection</h3>';
+        risksHtml += '<p style="color:var(--text-secondary); margin-bottom:var(--space-4);">The following risks were automatically detected based on your input:</p>';
+
+        for (const [category, risks] of Object.entries(risksByCategory)) {
+            risksHtml += `<div style="margin-bottom:var(--space-4);">`;
+            risksHtml += `<h4 style="color:var(--text-primary); margin-bottom:var(--space-2);">${category}</h4>`;
+            risksHtml += '<ul style="margin-left:var(--space-5);">';
+            risks.forEach(risk => {
+                const severityColor = risk.severity === 'high' ? 'var(--danger)' : risk.severity === 'medium' ? 'var(--warning)' : 'var(--success)';
+                risksHtml += `<li style="margin-bottom:var(--space-2); color:${severityColor};">
+                    <strong>${risk.severity.toUpperCase()}:</strong> ${risk.message}
+                    ${risk.evidence ? `<br><span style="color:var(--text-tertiary); font-size:var(--font-xs);">Evidence: "${risk.evidence}"</span>` : ''}
+                </li>`;
+            });
+            risksHtml += '</ul></div>';
+        }
+
+        risksHtml += '<p style="margin-top:var(--space-4); color:var(--text-secondary); font-size:var(--font-sm);">💡 These risks have been added to the "Known Gaps / Blockers" field for your review.</p>';
+        risksHtml += '</div>';
+
+        resultEl.innerHTML = risksHtml;
+
+        // Auto-populate the gaps field with detected risks
+        const gapsField = document.getElementById('risk-gaps');
+        const existingGaps = gapsField.value;
+        const newGaps = detectedRisks.map(r => `[${r.severity.toUpperCase()}] ${r.message}`).join('\n');
+        gapsField.value = existingGaps ? `${existingGaps}\n\n${newGaps}` : newGaps;
+
+        window.App.showToast(`Detected ${detectedRisks.length} potential risks`, 'success');
     },
 
     copyReport() {

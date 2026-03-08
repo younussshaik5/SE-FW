@@ -142,12 +142,50 @@ const RfpHelper = {
 
             try {
                 const result = await GeminiService.generateContent(
-                    `Answer this RFP question for Freshworks: "${q}".
+                    `Answer this RFP question for Freshworks with 10-30 detailed points: "${q}".
+
+**Required output structure with 10-30 detailed points:**
+
+## Executive Summary (5-7 points)
+- **Direct Answer:** (2-3 points)
+- **Key Benefits:** (3-5 points)
+- **Relevance:** (2-3 points)
+
+## Detailed Response (15-20 points)
+| Aspect | Detail | Evidence | Freshworks Advantage | Plan Tier |
+| --- | --- | --- | --- | --- |
+(5-7 aspects with detailed information, evidence, advantages, and plan tiers)
+
+## Feature Specifications (10-15 points)
+| Feature | Description | Capability | Limitations | Workarounds |
+| --- | --- | --- | --- | --- |
+(3-5 features with detailed specifications)
+
+## Compliance & Security (5-10 points)
+| Requirement | Status | Evidence | Documentation |
+| --- | --- | --- | --- |
+(3-5 compliance/security points)
+
+## Implementation Details (5-10 points)
+| Step | Action | Timeline | Requirements |
+| --- | --- | --- | --- |
+(3-5 implementation steps)
+
+## Comparison & Competitive Position (5-10 points)
+| Aspect | Freshworks | Industry Standard | Advantage |
+| --- | --- | --- | --- |
+(3-5 comparison points)
+
+## References & Sources (5-7 points)
+| Source | URL | Relevance | Date |
+| --- | --- | --- | --- |
+(3-5 sources with detailed citations)
 
 Ground your answer in official Freshworks documentation and help articles.
-Be concise, professional, and specific. If the answer references a specific product feature, mention the plan tier (Growth/Pro/Enterprise) where applicable.
-Cite official sources where possible (e.g., [Source: Freshdesk Docs]).`,
-                    'You are an expert RFP response writer for Freshworks. Provide accurate, grounded answers.',
+Be comprehensive, professional, and specific. If the answer references a specific product feature, mention the plan tier (Growth/Pro/Enterprise) where applicable.
+Cite official sources where possible (e.g., [Source: Freshdesk Docs]).
+Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`,
+                    'You are an expert RFP response writer for Freshworks. Provide accurate, grounded answers with comprehensive detail.',
                     [],
                     tools
                 );

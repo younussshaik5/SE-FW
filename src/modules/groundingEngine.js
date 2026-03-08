@@ -153,8 +153,56 @@ const GroundingEngine = {
         }));
 
         const result = await GeminiService.generateContent(
-            `Answer this question using Freshworks product knowledge and any attached context: ${query}. Cite specific features and documentation.`,
-            'You are a Freshworks knowledge base. Answer accurately with specific product details.',
+            `Answer this question using Freshworks product knowledge and any attached context with 10-30 detailed points per section:
+
+Question: ${query}
+
+**REQUIRED OUTPUT STRUCTURE WITH 10-30 DETAILED POINTS:**
+
+## Executive Summary (10-15 points)
+- **Direct Answer:** (3-5 points)
+- **Key Findings:** (3-5 points)
+- **Relevance to Question:** (2-3 points)
+- **Confidence Level:** (with rationale)
+
+## Detailed Response (20-25 points)
+| Aspect | Detail | Evidence | Freshworks Feature | Documentation Reference |
+| --- | --- | --- | --- | --- |
+(10-15 aspects with detailed information, evidence, features, and documentation references)
+
+## Feature Specifications (15-20 points)
+| Feature | Description | Capability | Limitations | Workarounds |
+| --- | --- | --- | --- | --- |
+(5-7 features with detailed specifications)
+
+## Implementation Details (10-15 points)
+| Step | Action | Prerequisites | Configuration | Validation |
+| --- | --- | --- | --- | --- |
+(5-7 implementation steps with detailed actions)
+
+## Best Practices (10-15 points)
+| Practice | Rationale | Implementation | Benefits | Common Pitfalls |
+| --- | --- | --- | --- | --- |
+(5-7 best practices with detailed explanations)
+
+## Comparison & Alternatives (10-15 points)
+| Option | Pros | Cons | Use Case | Recommendation |
+| --- | --- | --- | --- | --- |
+(3-5 options with detailed comparisons)
+
+## Troubleshooting (10-15 points)
+| Issue | Symptoms | Root Cause | Solution | Prevention |
+| --- | --- | --- | --- | --- |
+(5-7 common issues with detailed troubleshooting)
+
+## References & Sources (10-15 points)
+| Source | URL | Relevance | Date | Credibility |
+| --- | --- | --- | --- | --- |
+(5-7 sources with detailed citations)
+
+Cite specific features and documentation. Reference official Freshworks documentation where possible.
+Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`,
+            'You are a Freshworks knowledge base expert. Answer accurately with specific product details, comprehensive documentation references, and 10-30 detailed points per section.',
             attachments
         );
 

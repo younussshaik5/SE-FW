@@ -5,6 +5,11 @@
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
@@ -12,6 +17,9 @@ const PORT = 3000;
 // Enable CORS for all routes (since this is a local tool)
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the root directory
+app.use(express.static(path.join(__dirname, '../')));
 
 // Proxy Endpoint
 app.post('/api/proxy', async (req, res) => {

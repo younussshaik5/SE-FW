@@ -217,6 +217,17 @@ const FreshworksService = {
         return this.request('/api/v2/business_hours');
     },
 
+    // ---- Deals (Custom - for Freshdesk CRM or Freshsales) ----
+    async getDeals(page = 1) {
+        // Try Freshdesk CRM deals endpoint (if available)
+        // Fallback to Freshsales API if configured
+        return this.request(`/api/v2/deals?page=${page}`);
+    },
+
+    async getDeal(id) {
+        return this.request(`/api/v2/deals/${id}`);
+    },
+
     // ---- Email Configs ----
     async getEmailConfigs() {
         return this.request('/api/v2/email_configs');
