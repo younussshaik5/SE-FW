@@ -236,7 +236,8 @@ const App = {
                 const base64Data = reader.result.split(',')[1];
                 resolve({
                     mimeType: file.type,
-                    data: base64Data
+                    data: base64Data,
+                    name: file.name
                 });
             };
             reader.onerror = error => reject(error);

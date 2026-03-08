@@ -395,7 +395,7 @@ e.g., 'Must show: omnichannel inbox consolidation (they have 4 tools), Freddy AI
         }
 
         const result = await GeminiService.generateContent(
-            `You are a Director-Level Presales Intelligence Agent. Conduct exhaustive pre-call research on **${company}**.
+            ` as of current day and date and time You are a Director-Level Presales Intelligence Agent. Conduct exhaustive pre-call research on **${company}**.
 ${url ? `Company URL/LinkedIn: ${url}` : ''}
 ${industry ? `Industry: ${industry}` : ''}
 ${input ? `\nAdditional Discovery Notes:\n${input}` : ''}
@@ -604,7 +604,7 @@ Cross-check ALL facts with internet sources. Cite sources where possible (e.g., 
         }
 
         const result = await GeminiService.generateContent(
-            `You are a Director-Level Presales Strategist. Create a comprehensive demo strategy for:
+            `as of current day and date and time, You are a Director-Level Presales Strategist. Create a comprehensive demo strategy for:
 
 Customer: ${customer || 'Target Customer'}
 Product: Freshworks ${product}
@@ -707,7 +707,8 @@ Reference official Freshworks docs for admin paths. [Source: Freshdesk Admin Gui
         }
 
         const result = await GeminiService.generateContent(
-            `You are a Director-Level Demo Script Writer. Generate a ${duration}-minute demo script.
+            ` as of current day and date and time, You are a Director-Level Demo Script Writer. Generate a ${duration}-minute demo story line matching the real world scenario
+            and real time events script and storyline.
 
 Audience: ${audience}
 Customer Context: ${context || 'General prospect'}

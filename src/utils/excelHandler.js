@@ -17,13 +17,13 @@ const ExcelHandler = {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
 
-                    // Use first sheet
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-
-                    // Convert to JSON
-                    const json = XLSX.utils.sheet_to_json(worksheet);
-                    resolve(json);
+                    // Parse all sheets and return a structured object
+                    const sheets = workbook.SheetNames.map(name => {
+                        const worksheet = workbook.Sheets[name];
+                        const json = XLSX.utils.sheet_to_json(worksheet);
+                        return { name, rows: json };
+                    });
+                    resolve(sheets);
                 } catch (error) {
                     reject(error);
                 }

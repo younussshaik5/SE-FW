@@ -301,6 +301,14 @@ Return ONLY the JSON array, no other text. Ensure perfect JSON syntax with prope
                 const jsonStr = result.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
                 data = JSON.parse(jsonStr);
 
+                // Validate the generated data
+                const validation = this.validateData(data, type);
+                if (!validation.valid) {
+                    window.App.showToast(`Validation warnings: ${validation.errors.length} issues found`, 'warning');
+                    // Fix common issues
+                    data = this.fixData(data, type);
+                }
+
                 const badge = window.App.getAiBadge(result);
                 window.App.showToast(`Data generated via ${result.source}`, 'success');
                 // Could display badge in UI if needed, for JSON preview it's less standard

@@ -114,6 +114,7 @@ const Battlecards = {
                                 <option value="nice">NICE CXone</option>
                                 <option value="talkdesk">Talkdesk</option>
                                 <option value="five9">Five9</option>
+                                <option value="usepylon">usepylon</option>
                             </optgroup>
                             <optgroup label="— EX / ITSM (Employee Experience) —">
                                 <option value="servicenow-itsm">ServiceNow ITSM</option>

@@ -12,7 +12,17 @@ const MarkdownRenderer = {
     parse(text) {
         if (!text) return '';
 
-        let html = text;
+        // basic normalization to improve formatting
+        let html = text.trim();
+        // collapse excessive blank lines
+        html = html.replace(/\n{3,}/g, '\n\n');
+        // remove any leftover table markup lines (| a | b |)
+        html = html.replace(/^\|.*\|$/gm, '');
+        html = html.replace(/^\|[-\s:|]+\|$/gm, '');
+        // unify bullets: convert '*' lists to '-' for consistency
+        html = html.replace(/^[ \t]*\* /gm, '- ');
+        // ensure each bullet has a space after the dash
+        html = html.replace(/^-[^\s]/gm, match => '- ' + match.slice(1));
 
         // 1. Code Blocks (```code```) — extract BEFORE escaping
         const codeBlocks = [];
@@ -116,6 +126,11 @@ const MarkdownRenderer = {
 
         // Restore Code Blocks
         html = html.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => codeBlocks[index]);
+
+        // final safety: remove any HTML table elements that might have slipped through
+        // (some LLM outputs include raw <table> tags, so this guards against that)
+        html = html.replace(/<table[\s\S]*?<\/table>/g, '');
+        html = html.replace(/<div class="table-container">[\s\S]*?<\/div>/g, '');
 
         return html;
     }

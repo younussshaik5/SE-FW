@@ -89,8 +89,10 @@ e.g., Discovery call, Technical deep-dive, Demo, POC setup, Agent training"></te
                         
 e.g., Looker integration not natively supported, SSO blocked on customer IT, Data migration not scoped"></textarea>
                     </div>
-                    <div class="form-group" style="margin-bottom:var(--space-4)">
-                         <label class="form-label">Attachments (Architecture Diagrams, RFPs)</label>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">                        <label class="form-label">Partner Activity</label>
+                        <textarea id="risk-partner" class="form-textarea" rows="3" placeholder="Describe any partner engagements, joint workshops, or handoffs"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-bottom:var(--space-4)">                         <label class="form-label">Attachments (Architecture Diagrams, RFPs)</label>
                          <input type="file" id="risk-display-file" class="form-input" multiple />
                     </div>
                     <div style="display:flex; gap:var(--space-3);">
@@ -134,11 +136,12 @@ e.g., Looker integration not natively supported, SSO blocked on customer IT, Dat
             revenue: document.getElementById('risk-revenue').value,
             useCases: document.getElementById('risk-usecases').value,
             steps: document.getElementById('risk-steps').value,
-            gaps: document.getElementById('risk-gaps').value
+            gaps: document.getElementById('risk-gaps').value,
+            partner: document.getElementById('risk-partner').value
         };
 
-        // Auto-detect risks from input
-        const allText = `${data.useCases}\n${data.steps}\n${data.gaps}`;
+        // Auto-detect risks from input (include partner activity)
+        const allText = `${data.useCases}\n${data.steps}\n${data.gaps}\n${data.partner}`;
         const autoDetectedRisks = this.analyzeRisks(allText);
         const autoRisksText = autoDetectedRisks.length > 0
             ? `\n\n**Automatically Detected Risks:**\n${autoDetectedRisks.map(r => `- [${r.severity.toUpperCase()}] ${r.message}`).join('\n')}`
@@ -155,92 +158,35 @@ e.g., Looker integration not natively supported, SSO blocked on customer IT, Dat
             }
         }
 
-        const prompt = `Generate a Comprehensive Technical Risk Assessment Report with 10-30 detailed points per section.
+        const prompt = `You are a senior SE manager preparing the weekly technical risk summary. Use the provided inputs to populate the sections below; be exhaustive yet concise, using bullet lists and short paragraphs. Include partner activity where relevant.
 
-**Header:**
-- Customer: ${data.customer}
-- SE: ${data.initials} | Date: ${new Date().toLocaleDateString()}
-- Deal Stage: ${data.stage} | Revenue: ${data.revenue}
+${data.initials} ${new Date().toLocaleDateString()}
 
-**Automatically Detected Risks:**${autoRisksText}
+Top 3 Technical Use Cases:
+- (derive from: ${data.useCases})
 
-**Required output structure with 10-30 detailed points per section:**
+3 Challenges we are solving for and how we are solving them:
+- (pick from gaps, steps, partner activity)
 
-## Executive Summary (10-15 points)
-- **Risk Level:** [🔴 HIGH / 🟡 MEDIUM / 🟢 LOW]
-- **Deal Health Score:** (1-10 scale with rationale)
-- **Top 3 Priority Actions** (detailed 3-5 points each)
-- **Critical Blockers:** (3-5 points)
-- **Recommended Next Steps:** (5-7 points)
-- **Timeline Risk:** (3-5 points)
-- **Resource Requirements:** (3-5 points)
+What have we done so far:
+- SE steps taken (include quantities where applicable – e.g. (2) Discovery, (1) Demo, etc.) based on: ${data.steps}
 
-## Use Case Status (15-20 points)
-| Use Case | Status | Validation Level | Evidence | Risk Score | Mitigation Needed | Owner | Timeline |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-(Use ✅ Validated, ⏳ In Progress, ❌ Gap/Blocked, ⚠️ At Risk)
-(10-15 use cases with detailed status, validation evidence, risk scores, and mitigation plans)
+Stakeholders:
+- Who have we met so far?
+- Who are we planning to meet?
 
-## SE Activity Timeline (10-15 points)
-| Activity | Date/Status | Outcome | Evidence | Next Action | Risk Identified |
-| --- | --- | --- | --- | --- | --- |
-(List all SE steps: ${data.steps})
-(10-15 activities with detailed outcomes, evidence, and risk flags)
+What is outstanding / next steps:
+- (technical perspective; what remains after discovery and what needs to be addressed)
 
-## Gap Analysis (20-25 points)
-| Gap | Impact (🔴 High / 🟡 Med / 🟢 Low) | Current Status | Mitigation Strategy | Effort | Timeline | Dependencies | Risk Owner |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-(Analyze: ${data.gaps})
-(10-15 gaps with detailed impact analysis, mitigation strategies, effort estimates, timelines, dependencies, and ownership)
+Technical gaps / risks:
+- (summarize from: ${data.gaps})
 
-## Technical Risk Matrix (15-20 points)
-| Risk Category | Specific Risk | Probability | Impact | Risk Score | Mitigation Plan | Contingency | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-(5-7 risk categories with 2-3 specific risks each, detailed mitigation and contingency plans)
+Partner activity:
+- ${data.partner}
 
-## Integration & Architecture Risks (10-15 points)
-| Integration Point | Complexity | Current State | Required State | Gap | Risk Level | Mitigation |
-| --- | --- | --- | --- | --- | --- | --- |
-(5-7 integration points with detailed complexity analysis, gaps, and mitigation)
+Attachments: reference any diagrams or product gap documents attached in the Files section.
 
-## Data Migration Risks (10-15 points)
-| Data Type | Volume | Complexity | Current State | Required State | Risk Level | Mitigation |
-| --- | --- | --- | --- | --- | --- | --- |
-(5-7 data types with detailed migration analysis)
-
-## Security & Compliance Risks (10-15 points)
-| Requirement | Current State | Required State | Gap | Risk Level | Mitigation | Compliance Impact |
-| --- | --- | --- | --- | --- | --- | --- |
-(5-7 security/compliance requirements with detailed gap analysis)
-
-## Performance & Scalability Risks (10-15 points)
-| Metric | Current State | Required State | Gap | Risk Level | Mitigation | Validation Plan |
-| --- | --- | --- | --- | --- | --- | --- |
-(5-7 performance metrics with detailed analysis)
-
-## Stakeholder & Timeline Risks (10-15 points)
-| Stakeholder | Role | Influence | Engagement Level | Risk Level | Mitigation Strategy |
-| --- | --- | --- | --- | --- | --- |
-(5-7 stakeholders with detailed engagement analysis and risk mitigation)
-
-## Budget & Resource Risks (10-15 points)
-| Resource Type | Required | Available | Gap | Risk Level | Mitigation Strategy |
-| --- | --- | --- | --- | --- | --- |
-(5-7 resource types with detailed gap analysis)
-
-## Overall Risk Assessment (10-15 points)
-- **Risk Level:** [🔴 HIGH / 🟡 MEDIUM / 🟢 LOW]
-- **Risk Score:** (1-100 scale with breakdown)
-- **Rationale:** (5-7 detailed points)
-- **Top 10 Priority Actions** (numbered list with 3-5 points each)
-- **Timeline Impact:** (3-5 points)
-- **Budget Impact:** (3-5 points)
-- **Resource Impact:** (3-5 points)
-- **Go/No-Go Recommendation:** (with 5-7 supporting points)
-
-Use Cases: ${data.useCases}
-Reference any attached diagrams or documents for deeper risk analysis.
-Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`;
+Keep the entire report crisp and to‑the‑point while still covering each bullet above. **Do not use any tables** (Markdown or HTML) whatsoever; only bullet lists, short paragraphs, and clear heading lines are allowed. Include the automatically detected risks from earlier: ${autoRisksText}`;
 
         const result = await GeminiService.generateContent(prompt, 'You are a senior SE manager creating structured deal risk reports.', attachments);
 

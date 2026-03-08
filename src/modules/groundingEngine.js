@@ -5,6 +5,84 @@
 import GeminiService from '../services/geminiService.js';
 
 const GroundingEngine = {
+    // Enhanced document processing for better RAG
+    indexedDocs: [],
+    documentChunks: [], // For semantic search simulation
+
+    // Process document text into chunks for better retrieval
+    processDocumentChunks(text, chunkSize = 500) {
+        const words = text.split(/\s+/);
+        const chunks = [];
+        for (let i = 0; i < words.length; i += chunkSize) {
+            chunks.push(words.slice(i, i + chunkSize).join(' '));
+        }
+        return chunks;
+    },
+
+    // Simple semantic search simulation (keyword-based)
+    searchDocuments(query, topK = 5) {
+        const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+        const scores = [];
+
+        this.documentChunks.forEach((chunk, index) => {
+            let score = 0;
+            const chunkText = chunk.text.toLowerCase();
+
+            queryWords.forEach(word => {
+                if (chunkText.includes(word)) {
+                    score += 1;
+                    // Boost score for exact phrase matches
+                    if (chunkText.includes(query.toLowerCase())) {
+                        score += 2;
+                    }
+                }
+            });
+
+            if (score > 0) {
+                scores.push({ chunk, score, index });
+            }
+        });
+
+        // Sort by score and return top K
+        return scores.sort((a, b) => b.score - a.score).slice(0, topK);
+    },
+
+    // Add web page source
+    async addWebSource(url) {
+        try {
+            const response = await fetch(url);
+            const text = await response.text();
+
+            // Extract main content (simplified)
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            const mainContent = doc.querySelector('main') || doc.querySelector('article') || doc.body;
+            const content = mainContent.textContent.substring(0, 5000); // Limit size
+
+            this.indexedDocs.push({
+                name: url,
+                mime_type: 'text/html',
+                data: btoa(unescape(encodeURIComponent(content))),
+                url: url
+            });
+
+            // Process into chunks
+            const chunks = this.processDocumentChunks(content);
+            chunks.forEach(chunkText => {
+                this.documentChunks.push({
+                    text: chunkText,
+                    source: url,
+                    docIndex: this.indexedDocs.length - 1
+                });
+            });
+
+            window.App.showToast(`Indexed web page: ${url}`, 'success');
+            this.renderSources();
+        } catch (error) {
+            window.App.showToast(`Failed to index web page: ${error.message}`, 'error');
+        }
+    },
+
     render() {
         return `
         <div class="module-page">
@@ -15,23 +93,26 @@ const GroundingEngine = {
 
             <div class="stat-cards" style="margin-bottom:var(--space-6)">
                 <div class="stat-card">
-                    <div class="stat-value">6</div>
+                    <div class="stat-value" id="ge-total-sources">0</div>
                     <div class="stat-label">Knowledge Sources</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" style="background:var(--success);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">4</div>
-                    <div class="stat-label">Indexed</div>
+                    <div class="stat-value" style="background:var(--success);-webkit-background-clip:text;-webkit-text-fill-color:transparent;" id="ge-indexed-chunks">0</div>
+                    <div class="stat-label">Indexed Chunks</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" style="background:var(--warning);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">2</div>
-                    <div class="stat-label">Pending</div>
+                    <div class="stat-value" style="background:var(--warning);-webkit-background-clip:text;-webkit-text-fill-color:transparent;" id="ge-searchable">0</div>
+                    <div class="stat-label">Searchable</div>
                 </div>
             </div>
 
             <div class="glass-card module-panel module-full" style="margin-bottom:var(--space-6)">
                 <div class="result-header">
                     <h2>📂 Knowledge Sources</h2>
-                    <button class="btn btn-sm btn-primary" onclick="GroundingEngine.addSource()">+ Add Source</button>
+                    <div style="display:flex; gap:var(--space-2);">
+                        <button class="btn btn-sm btn-primary" onclick="GroundingEngine.addSource()">+ Add File</button>
+                        <button class="btn btn-sm btn-secondary" onclick="GroundingEngine.addWebSourcePrompt()">🌐 Add Web Page</button>
+                    </div>
                 </div>
                 <div id="ge-sources" class="result-content" style="max-height:400px;">
                     <!-- Sources rendered here -->
@@ -63,6 +144,7 @@ const GroundingEngine = {
 
     init() {
         this.renderSources();
+        this.updateStats();
     },
 
     indexedDocs: [],
@@ -76,32 +158,78 @@ const GroundingEngine = {
             if (!file) return;
 
             const processed = await window.App.readFile(file);
-            // Simulate indexing by storing base64 data
+            // Decode base64 data to text
+            const text = atob(processed.data);
+
+            // Store document
             this.indexedDocs.push({
                 name: file.name,
                 mime_type: processed.mimeType,
                 data: processed.data
             });
 
-            window.App.showToast(`Indexed ${file.name}`, 'success');
+            // Process into chunks for semantic search
+            const chunks = this.processDocumentChunks(text);
+            chunks.forEach(chunkText => {
+                this.documentChunks.push({
+                    text: chunkText,
+                    source: file.name,
+                    docIndex: this.indexedDocs.length - 1
+                });
+            });
+
+            window.App.showToast(`Indexed ${file.name} (${chunks.length} chunks)`, 'success');
             this.renderSources();
+            this.updateStats();
         };
         input.click();
+    },
+
+    addWebSourcePrompt() {
+        const url = prompt('Enter URL to index (e.g., https://example.com/docs):');
+        if (url && url.trim()) {
+            this.addWebSource(url.trim());
+        }
+    },
+
+    updateStats() {
+        const totalSourcesEl = document.getElementById('ge-total-sources');
+        const indexedChunksEl = document.getElementById('ge-indexed-chunks');
+        const searchableEl = document.getElementById('ge-searchable');
+
+        if (totalSourcesEl) totalSourcesEl.textContent = this.indexedDocs.length;
+        if (indexedChunksEl) indexedChunksEl.textContent = this.documentChunks.length;
+        if (searchableEl) searchableEl.textContent = this.documentChunks.length > 0 ? 'Yes' : 'No';
     },
 
     renderSources() {
         const container = document.getElementById('ge-sources');
         if (!container) return;
 
-        // Render user-uploaded "indexed" docs
-        const allSources = this.indexedDocs.map(d => ({
-            icon: '📄',
-            name: d.name,
-            type: 'Document',
-            items: '1 doc',
-            status: 'Indexed',
-            lastIndexed: 'Just now'
-        }));
+        // Render user-uploaded "indexed" docs with chunk info
+        const allSources = this.indexedDocs.map((d, index) => {
+            const chunkCount = this.documentChunks.filter(c => c.docIndex === index).length;
+            return {
+                icon: '📄',
+                name: d.name,
+                type: d.mime_type.includes('html') ? 'Web Page' : 'Document',
+                items: `${chunkCount} chunks`,
+                status: 'Indexed',
+                lastIndexed: 'Just now',
+                url: d.url || ''
+            };
+        });
+
+        if (allSources.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📂</div>
+                    <h3>No knowledge sources yet</h3>
+                    <p>Add documents or web pages to build your RAG knowledge base.</p>
+                </div>
+            `;
+            return;
+        }
 
         container.innerHTML = `
             <table style="width:100%;border-collapse:collapse;">
@@ -109,30 +237,53 @@ const GroundingEngine = {
                     <tr style="border-bottom:1px solid var(--border-primary);">
                         <th style="text-align:left;padding:var(--space-3);color:var(--text-secondary);font-weight:500;">Source</th>
                         <th style="text-align:left;padding:var(--space-3);color:var(--text-secondary);font-weight:500;">Type</th>
-                        <th style="text-align:left;padding:var(--space-3);color:var(--text-secondary);font-weight:500;">Items</th>
+                        <th style="text-align:left;padding:var(--space-3);color:var(--text-secondary);font-weight:500;">Chunks</th>
                         <th style="text-align:left;padding:var(--space-3);color:var(--text-secondary);font-weight:500;">Status</th>
-                        <th style="text-align:left;padding:var(--space-3);color:var(--text-secondary);font-weight:500;">Last Indexed</th>
+                        <th style="text-align:left;padding:var(--space-3);color:var(--text-secondary);font-weight:500;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${allSources.map(s => `
+                    ${allSources.map((s, i) => `
                         <tr style="border-bottom:1px solid var(--border-muted);">
                             <td style="padding:var(--space-3);">
                                 <div style="font-weight:600;">${s.icon} ${s.name}</div>
-                                <div style="font-size:var(--font-xs);color:var(--text-tertiary);">${s.url || ''}</div>
+                                <div style="font-size:var(--font-xs);color:var(--text-tertiary);">${s.url}</div>
                             </td>
                             <td style="padding:var(--space-3);color:var(--text-secondary);">${s.type}</td>
                             <td style="padding:var(--space-3);color:var(--text-secondary);">${s.items}</td>
                             <td style="padding:var(--space-3);">
-                                <span class="chip ${s.status === 'Indexed' ? 'selected' : ''}" style="font-size:var(--font-xs);">
-                                    ${s.status === 'Indexed' ? '✅' : '⏳'} ${s.status}
+                                <span class="chip selected" style="font-size:var(--font-xs);">
+                                    ✅ ${s.status}
                                 </span>
                             </td>
-                            <td style="padding:var(--space-3);color:var(--text-tertiary);font-size:var(--font-sm);">${s.lastIndexed}</td>
+                            <td style="padding:var(--space-3);">
+                                <button class="btn btn-sm btn-danger" onclick="GroundingEngine.removeSource(${i})">Remove</button>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>`;
+    },
+
+    removeSource(index) {
+        if (!confirm('Remove this source and all its chunks?')) return;
+
+        const doc = this.indexedDocs[index];
+
+        // Remove chunks for this document
+        this.documentChunks = this.documentChunks.filter(c => c.docIndex !== index);
+
+        // Update docIndex for remaining chunks
+        this.documentChunks.forEach(c => {
+            if (c.docIndex > index) c.docIndex--;
+        });
+
+        // Remove document
+        this.indexedDocs.splice(index, 1);
+
+        window.App.showToast('Source removed', 'success');
+        this.renderSources();
+        this.updateStats();
     },
 
     async testQuery() {
@@ -144,7 +295,34 @@ const GroundingEngine = {
             return;
         }
 
+        if (this.documentChunks.length === 0) {
+            window.App.showToast('No indexed knowledge sources. Add documents first.', 'warning');
+            return;
+        }
+
         responseEl.innerHTML = '<div class="loading-shimmer" style="height:200px"></div>';
+
+        // Perform semantic search to find relevant chunks
+        const searchResults = this.searchDocuments(query, 5);
+
+        if (searchResults.length === 0) {
+            responseEl.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <h3>No relevant information found</h3>
+                    <p>The query doesn't match any indexed content. Try a different question or add more sources.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Build context from top search results
+        const context = searchResults.map((result, i) => {
+            return `Source ${i + 1} (${result.chunk.source}):
+${result.chunk.text}
+
+`;
+        }).join('\n');
 
         // Prepare attachments from indexed docs
         const attachments = this.indexedDocs.map(d => ({
@@ -153,22 +331,31 @@ const GroundingEngine = {
         }));
 
         const result = await GeminiService.generateContent(
-            `Answer this question using Freshworks product knowledge and any attached context with 10-30 detailed points per section:
+            `Answer this question using ONLY the following indexed knowledge sources. Cite specific sources for each claim.
 
-Question: ${query}
+**RELEVANT CONTEXT FROM KNOWLEDGE BASE:**
+${context}
+
+**USER QUESTION:**
+${query}
 
 **REQUIRED OUTPUT STRUCTURE WITH 10-30 DETAILED POINTS:**
 
 ## Executive Summary (10-15 points)
-- **Direct Answer:** (3-5 points)
-- **Key Findings:** (3-5 points)
+- **Direct Answer:** (3-5 points, citing sources)
+- **Key Findings:** (3-5 points, citing sources)
 - **Relevance to Question:** (2-3 points)
-- **Confidence Level:** (with rationale)
+- **Confidence Level:** (with rationale based on source quality)
 
 ## Detailed Response (20-25 points)
-| Aspect | Detail | Evidence | Freshworks Feature | Documentation Reference |
+| Aspect | Detail | Evidence (Source) | Freshworks Feature | Documentation Reference |
 | --- | --- | --- | --- | --- |
-(10-15 aspects with detailed information, evidence, features, and documentation references)
+(10-15 aspects with detailed information, citing specific sources)
+
+## Source Analysis (10-15 points)
+| Source | Key Information | Relevance | Reliability | Application |
+| --- | --- | --- | --- | --- |
+(5-7 sources with detailed analysis)
 
 ## Feature Specifications (15-20 points)
 | Feature | Description | Capability | Limitations | Workarounds |
@@ -185,45 +372,41 @@ Question: ${query}
 | --- | --- | --- | --- | --- |
 (5-7 best practices with detailed explanations)
 
-## Comparison & Alternatives (10-15 points)
-| Option | Pros | Cons | Use Case | Recommendation |
-| --- | --- | --- | --- | --- |
-(3-5 options with detailed comparisons)
-
 ## Troubleshooting (10-15 points)
 | Issue | Symptoms | Root Cause | Solution | Prevention |
 | --- | --- | --- | --- | --- |
 (5-7 common issues with detailed troubleshooting)
 
-## References & Sources (10-15 points)
-| Source | URL | Relevance | Date | Credibility |
-| --- | --- | --- | --- | --- |
-(5-7 sources with detailed citations)
-
-Cite specific features and documentation. Reference official Freshworks documentation where possible.
-Ensure output is highly structured with Markdown tables and 10-30 detailed points per section.`,
-            'You are a Freshworks knowledge base expert. Answer accurately with specific product details, comprehensive documentation references, and 10-30 detailed points per section.',
+**IMPORTANT:**
+- Use ONLY information from the provided context
+- Cite specific sources for each claim (e.g., "Source 1", "Source 2")
+- If information is not in the context, state "Not found in indexed sources"
+- Reference official Freshworks documentation where possible
+- Ensure output is highly structured with Markdown tables and 10-30 detailed points per section`,
+            'You are a Freshworks knowledge base expert. Answer accurately using ONLY the provided indexed knowledge sources. Cite sources for every claim. If information is not in the sources, state that clearly.',
             attachments
         );
 
-        if (result.demo || !result.success) {
+        if (result.success) {
+            // Add source citations to the response
+            const sourceCitations = searchResults.map((r, i) =>
+                `[${i + 1}] ${r.chunk.source} (Relevance Score: ${r.score})`
+            ).join('\n');
+
             responseEl.innerHTML = `
-                <div style="color:var(--text-primary);line-height:1.6;">
-                    <p><strong>📚 Grounded Response (Demo):</strong></p>
-                    <p>Based on the indexed knowledge sources, Freshdesk Enterprise offers comprehensive SLA management including:</p>
-                    <ul style="margin:var(--space-3) 0;padding-left:var(--space-5);">
-                        <li>Multiple SLA policies with priority-based rules</li>
-                        <li>Business hour and calendar hour SLAs</li>
-                        <li>Escalation rules with up to 4 levels</li>
-                        <li>SLA violation alerts via email and Slack</li>
-                        <li>SLA performance analytics dashboard</li>
-                    </ul>
-                    <p style="font-size:var(--font-sm);color:var(--text-tertiary);margin-top:var(--space-4);">
-                        📖 Sources: Freshdesk Admin Guide (Section 5.2), Freshdesk API Docs, G2 Reviews
-                    </p>
-                </div>`;
+                <div class="result-body">${window.MarkdownRenderer.parse(result.text)}</div>
+                <div style="margin-top:var(--space-4); padding:var(--space-3); background:var(--bg-secondary); border-radius:var(--radius-md);">
+                    <strong>📚 Sources Used:</strong><br>
+                    <pre style="margin:0; white-space:pre-wrap; font-size:var(--font-sm);">${sourceCitations}</pre>
+                </div>
+            `;
         } else {
-            responseEl.innerHTML = `<div class="result-body">${window.MarkdownRenderer.parse(result.text)}</div>`;
+            responseEl.innerHTML = `
+                <div class="error-container" style="padding:var(--space-4); background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.2);">
+                    <div style="color:#f87171; font-weight:600; margin-bottom:var(--space-2);">❌ AI Generation Failed</div>
+                    <div style="color:var(--text-secondary); font-size:var(--font-sm);">${result.error || 'Unknown error occurred'}</div>
+                </div>
+            `;
         }
     }
 };
