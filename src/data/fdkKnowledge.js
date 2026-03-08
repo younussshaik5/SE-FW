@@ -1,229 +1,197 @@
-// ========================================
-// FDK Knowledge Base & Templates (v3.0)
-// ========================================
-
 const FdkKnowledge = {
-    // 1. Manifest Templates
+    // 1. Manifest Templates (FDK v3.0)
     manifests: {
         freshdesk: {
             "platform-version": "3.0",
             "product": {
                 "freshdesk": {
                     "location": {
-                        "ticket_sidebar": {
-                            "url": "index.html",
-                            "icon": "icon.svg"
-                        }
+                        "ticket_sidebar": { "url": "index.html", "icon": "icon.svg" }
                     }
                 }
             },
-            "whitelisted-domains": [],
-            "engines": {
-                "node": "18.13.0",
-                "fdk": "9.1.0"
-            }
+            "engines": { "node": "18.13.0", "fdk": "9.1.1" }
         },
         freshservice: {
             "platform-version": "3.0",
             "product": {
                 "freshservice": {
                     "location": {
-                        "ticket_sidebar": {
-                            "url": "index.html",
-                            "icon": "icon.svg"
-                        }
+                        "ticket_sidebar": { "url": "index.html", "icon": "icon.svg" }
                     }
                 }
             },
-            "whitelisted-domains": [],
-            "engines": {
-                "node": "18.13.0",
-                "fdk": "9.1.0"
-            }
+            "engines": { "node": "18.13.0", "fdk": "9.1.1" }
+        },
+        freshsales: {
+            "platform-version": "2.3",
+            "product": {
+                "freshsales": {
+                    "location": {
+                        "contact_sidebar": { "url": "index.html", "icon": "icon.svg" }
+                    }
+                }
+            },
+            "engines": { "node": "18.13.0", "fdk": "9.1.1" }
+        },
+        freshchat: {
+            "platform-version": "3.0",
+            "product": {
+                "freshchat": {
+                    "location": {
+                        "conversation_sidebar": { "url": "index.html", "icon": "icon.svg" }
+                    }
+                }
+            },
+            "engines": { "node": "18.13.0", "fdk": "9.1.1" }
         }
     },
 
-    // 2. Valid Locations per Product (FDK v3.0)
+    // 2. Comprehensive Locations per Product (FDK v3.0)
     locations: {
         freshdesk: [
-            "ticket_sidebar",
-            "ticket_top_navigation",
-            "ticket_background",
-            "contact_sidebar",
-            "full_page_app",
-            "cti_sidebar",
-            "new_ticket_requester_info",
-            "ticket_requester_info"
+            "ticket_sidebar", "ticket_top_navigation", "ticket_background",
+            "contact_sidebar", "full_page_app", "cti_sidebar",
+            "new_ticket_requester_info", "ticket_requester_info", "modal"
         ],
         freshservice: [
-            "ticket_sidebar",
-            "ticket_top_navigation",
-            "ticket_background",
-            "full_page_app",
-            "change_sidebar",
-            "asset_sidebar",
-            "service_catalog_sidebar"
+            "ticket_sidebar", "ticket_top_navigation", "ticket_background",
+            "full_page_app", "change_sidebar", "asset_sidebar",
+            "service_catalog_sidebar", "requester_sidebar", "modal"
         ],
         freshsales: [
-            "contact_sidebar",
-            "deal_sidebar",
-            "full_page_app",
-            "lead_sidebar"
+            "contact_sidebar", "deal_sidebar", "full_page_app",
+            "lead_sidebar", "account_sidebar", "sales_order_sidebar", "modal"
         ],
         freshchat: [
-            "conversation_sidebar",
-            "full_page_app"
+            "conversation_sidebar", "full_page_app", "user_sidebar", "modal"
         ],
         freshcaller: [
-            "call_sidebar",
-            "full_page_app"
+            "call_sidebar", "full_page_app", "modal"
         ],
         freshmarketer: [
-            "full_page_app",
-            "contact_sidebar"
+            "full_page_app", "contact_sidebar", "modal"
         ]
     },
 
     // 3. Serverless Event Patterns (FDK v3.0)
     events: {
         freshdesk: [
-            "onTicketCreate",
-            "onTicketUpdate",
-            "onConversationCreate",
-            "onContactCreate",
-            "onContactUpdate",
-            "onAppInstall",
-            "onAppUninstall",
-            "onExternalEvent",
-            "onScheduledEvent"
+            "onTicketCreate", "onTicketUpdate", "onConversationCreate",
+            "onContactCreate", "onContactUpdate", "onCompanyCreate", "onCompanyUpdate",
+            "onAppInstall", "onAppUninstall", "onExternalEvent", "onScheduledEvent"
         ],
         freshservice: [
-            "onTicketCreate",
-            "onTicketUpdate",
-            "onAppInstall",
-            "onAppUninstall",
-            "onExternalEvent",
-            "onScheduledEvent",
-            "onChangeCreate",
-            "onChangeUpdate"
+            "onTicketCreate", "onTicketUpdate", "onAssetCreate", "onAssetUpdate",
+            "onChangeCreate", "onChangeUpdate", "onReleaseCreate", "onReleaseUpdate",
+            "onAppInstall", "onAppUninstall", "onExternalEvent", "onScheduledEvent"
         ],
         freshsales: [
-            "onContactCreate",
-            "onContactUpdate",
-            "onDealCreate",
-            "onDealUpdate",
-            "onAppInstall",
-            "onAppUninstall",
-            "onExternalEvent"
+            "onContactCreate", "onContactUpdate", "onDealCreate", "onDealUpdate",
+            "onAccountCreate", "onAccountUpdate", "onAppInstall", "onAppUninstall", "onExternalEvent"
         ],
         freshchat: [
-            "onConversationCreate",
-            "onMessageCreate",
-            "onAppInstall",
-            "onAppUninstall"
+            "onConversationCreate", "onConversationUpdate", "onMessageCreate",
+            "onUserCreate", "onUserUpdate", "onAppInstall", "onAppUninstall"
         ],
         patterns: {
             onTicketCreate: `
-    onTicketCreate: function(args) {
+    onTicketCreateHandler: function(args) {
         console.log('Ticket Created:', args.data.ticket.id);
         // Access ticket data via args.data.ticket
         // Use $request for external API calls
         // Use $db for data storage
-        renderData();
     },
 `,
             onAppInstall: `
-    onAppInstall: function(args) {
+    onAppInstallHandler: function(args) {
         console.log('App Installed');
-        // Initialize app data using $db
-        renderData();
+        // Initialize app data using $db or generate webhooks
     },
 `,
             onExternalEvent: `
-    onExternalEvent: function(args) {
-        console.log('External Event:', args);
+    onExternalEventHandler: function(args) {
+        console.log('External Event received:', args.data);
         // Process webhook payload from args.data
-        renderData();
     },
 `,
             onScheduledEvent: `
-    onScheduledEvent: function(args) {
-        console.log('Scheduled Event:', args);
+    onScheduledEventHandler: function(args) {
+        console.log('Scheduled Event execution:', args.data);
         // Run periodic tasks
-        renderData();
-    },
+    }
 `
         }
     },
 
-    // 4. Frontend Code Snippets (FDK v3.0)
-    frontend: {
-        init: `
-    document.addEventListener("DOMContentLoaded", function () {
-        app.initialized().then(function (_client) {
-            window.client = _client;
-            client.events.on("app.activated", onAppActivated);
-        });
-    });
-
-    function onAppActivated() {
-        console.log('App Activated');
-    }
+    // 4. Advanced App Features & Modules
+    features: {
+        smi: {
+            desc: "Server Method Invocation for secure backend calls",
+            manifest: { "functions": { "myBackendFunction": { "handler": "myBackendFunction" } } },
+            server: `
+    myBackendFunction: function(args) {
+        // args.data contains parameters from frontend
+        return renderData(null, { success: true, message: "Hello from backend" });
+    },
 `,
-        dataMethod: `
-    // Data Storage API ($db in serverless, client.db in frontend)
-    client.db.set("key", { value: "data" }).then(
-        function(data) { console.log('Saved', data); },
-        function(error) { console.error('Error', error); }
+            frontend: `
+    client.request.invoke("myBackendFunction", { key: "value" }).then(
+        function(data) { console.log("SMI Success:", data); },
+        function(err) { console.error("SMI Error:", err); }
     );
-`,
-        requestMethod: `
-    // Request API (client.request in frontend, $request in serverless)
-    var options = {
-        headers: { "Authorization": "Bearer <%= iparam.api_key %>" }
-    };
-    client.request.get("https://api.example.com/resource", options).then(
-        function(data) { console.log(JSON.parse(data.response)); },
-        function(error) { console.error(error); }
-    );
-`,
-        interfaceMethod: `
-    // Interface API
-    client.interface.trigger("showNotify", {
-        type: "success",
-        message: "Operation completed!"
-    });
 `
+        },
+        oauth: {
+            desc: "OAuth2 authentication for third-party integrations",
+            manifest: { "features": { "oauth": {} } },
+            iparams: {
+                "auth": {
+                    "type": "oauth2",
+                    "display_name": "Connect Account",
+                    "description": "Please authorize the app",
+                    "token_type": "account",
+                    "authorize_url": "https://example.com/oauth/authorize",
+                    "token_url": "https://api.example.com/oauth/token",
+                    "options": { "scope": "read write" }
+                }
+            }
+        },
+        data_storage: {
+            desc: "Persistent key-value storage ($db)",
+            server: `
+    // Save data
+    $db.set("user_123", { name: "John" }).then(console.log, console.error);
+    // Get data
+    $db.get("user_123").then(console.log, console.error);
+`
+        }
     },
 
-    // 5. Analysis Prompts
+    // 5. Enhanced Analysis Prompts
     prompts: {
         analyzeParams: `
-Analyze the following Freshworks app description and return a JSON object.
+Analyze the Freshworks app requirement and return a structured JSON configuration.
+Target: FDK v3.0 (Node 18).
 
-Use these valid FDK v3.0 options:
-- Products: freshdesk, freshservice, freshsales, freshchat, freshcaller, freshmarketer
-- Freshdesk locations: ticket_sidebar, ticket_top_navigation, ticket_background, contact_sidebar, full_page_app, cti_sidebar
-- Freshservice locations: ticket_sidebar, ticket_top_navigation, ticket_background, full_page_app, change_sidebar, asset_sidebar, service_catalog_sidebar
-- Freshsales locations: contact_sidebar, deal_sidebar, full_page_app, lead_sidebar
-- Freshchat locations: conversation_sidebar, full_page_app
-- Freshdesk events: onTicketCreate, onTicketUpdate, onConversationCreate, onContactCreate, onAppInstall, onExternalEvent, onScheduledEvent
-- Freshservice events: onTicketCreate, onTicketUpdate, onChangeCreate, onChangeUpdate, onAppInstall, onExternalEvent, onScheduledEvent
-- Freshsales events: onContactCreate, onContactUpdate, onDealCreate, onDealUpdate, onAppInstall, onExternalEvent
-- Features: data_storage ($db), external_api ($request), serverless_events, oauth, scheduled_events
+Products: freshdesk, freshservice, freshsales, freshchat, freshcaller, freshmarketer.
 
-Return this exact JSON structure:
+JSON Structure:
 {
-  "product": "freshdesk|freshservice|freshsales|freshchat|freshcaller|freshmarketer",
-  "locations": ["ticket_sidebar", "full_page_app"],
-  "features": ["data_storage", "external_api", "serverless_events"],
-  "events": ["onTicketCreate", "onAppInstall"],
-  "apis": ["https://api.example.com"],
+  "product": "primary_product",
+  "locations": ["list_of_locations"],
+  "features": ["smi", "oauth", "data_storage", "serverless_events"],
+  "events": ["list_of_serverless_events"],
+  "thirdParty": {
+    "name": "Integration Name",
+    "authType": "apiKey|oauth2",
+    "endpoints": ["https://api.example.com/..."]
+  },
   "complexity": "low|medium|high",
-  "reasoning": "Brief explanation of architecture decisions."
+  "reasoning": "Explain the architectural choices."
 }
 
-Description:
+Requirement:
 `
     }
 };
