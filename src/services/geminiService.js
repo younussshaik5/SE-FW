@@ -18,12 +18,12 @@ const GeminiService = {
 
         this.openRouterModel = getValidKey(localStorage.getItem('openrouter_model')) ||
             getValidKey(window.APP_CONFIG?.OPENROUTER_MODEL) ||
-            getValidKey(window.ENV?.OPENROUTER_MODEL) || 'nvidia/nemotron-nano-12b-v2-vl:free';
+            getValidKey(window.ENV?.OPENROUTER_MODEL) || 'stepfun/step-3.5-flash:free';
 
         this.multimodalModel = getValidKey(localStorage.getItem('openrouter_multimodal_model')) ||
             getValidKey(window.APP_CONFIG?.OPENROUTER_MULTIMODAL_MODEL) ||
             getValidKey(window.ENV?.OPENROUTER_MULTIMODAL_MODEL) || 'arcee-ai/trinity-large-preview:free';
-        this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'google/gemini-2.5-flash-lite';
+        this.secondaryMultimodalModel = localStorage.getItem('openrouter_multimodal_secondary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_SECONDARY_MODEL || 'stepfun/step-3.5-flash:free';
         this.tertiaryMultimodalModel = localStorage.getItem('openrouter_multimodal_tertiary_model') || window.APP_CONFIG?.OPENROUTER_MULTIMODAL_TERTIARY_MODEL || null;
         this.googleAIKey = localStorage.getItem('google_ai_key') || window.APP_CONFIG?.GOOGLE_AI_KEY || null;
     },
